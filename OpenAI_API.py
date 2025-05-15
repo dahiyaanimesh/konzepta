@@ -53,9 +53,9 @@ if not DEFAULT_BOARD_ID:
 
 # --- API Models config --- 
 TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4.1-nano")
-IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "dall-e-3")
+IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-1")
 IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
-IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "standard")
+IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "high")
 
 # --- Cache config ---
 REQUEST_CACHE = {}
@@ -336,9 +336,12 @@ def generate_text2image_sketches():
 
             # Create prompt for DALL-E
             full_prompt = (
-                f"An abstract concept sketch in a UX brainstorming session. "
-                f"Theme: '{raw_text}'. Simple, clean, professional digital sketch with BRIGHT BOLD COLORS on pure white background. "
-                f"Very high contrast. Minimal design. No text. Use simple lines and shapes with bright primary colors."
+                    f"An image illustrating the core ideas of a UX brainstorming session. "
+                    f"Theme: '{prompt}'. "
+                    f"Create a clean, high-quality, professional image that visually represents the theme. "
+                    f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
+                    f"Minimal visual clutter. No text. Neutral or soft background. "
+                    f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
             )
             logger.info(f"Generating image for: {raw_text[:50]}...")
 
@@ -479,9 +482,12 @@ def generate_image_ideas():
                 
             # Create prompt for DALL-E
             full_prompt = (
-                f"An abstract concept sketch in a UX brainstorming session. "
-                f"Theme: '{prompt}'. Simple, clean, professional digital sketch with BRIGHT BOLD COLORS on pure white background. "
-                f"Very high contrast. Minimal design. No text. Use simple lines and shapes with bright primary colors."
+                    f"An image illustrating the core ideas of a UX brainstorming session. "
+                    f"Theme: '{prompt}'. "
+                    f"Create a clean, high-quality, professional image that visually represents the theme. "
+                    f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
+                    f"Minimal visual clutter. No text. Neutral or soft background. "
+                    f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
             )
             
             try:
