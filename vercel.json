@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/redirect",
+      "dest": "/api/redirect"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "OPENAI_API_KEY": "dummy-value-for-build",
+    "MIRO_TOKEN": "dummy-value-for-build",
+    "MIRO_BOARD_ID": "dummy-value-for-build",
+    "MIRO_CLIENT_ID": "dummy-value-for-build",
+    "MIRO_CLIENT_SECRET": "dummy-value-for-build",
+    "MIRO_REDIRECT_URL": "https://konzepta-9v8j.vercel.app/api/redirect",
+    "NEXT_PUBLIC_BACKEND_URL": "https://konzepta.onrender.com"
+  }
+} 

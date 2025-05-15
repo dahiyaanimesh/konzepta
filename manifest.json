@@ -1,0 +1,21 @@
+{
+  "name": "AI Ideation Assistant",
+  "description": "Generate AI-powered UX design ideas from sticky notes in Miro.",
+  "iconUrl": "https://www.example.com/icon.png",
+  "permissions": [
+    "READ"
+  ],
+  "scopes": [
+    "boards:read",
+    "boards:read:items"
+  ],
+  "webhooks": [],
+  "settings": {
+    "sidebar": {
+      "url": "https://konzepta-9v8j.vercel.app", 
+      "height": 600,
+      "width": 400
+    }
+  },
+  "sdk": "2.0"
+}
