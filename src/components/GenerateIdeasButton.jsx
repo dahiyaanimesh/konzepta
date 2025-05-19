@@ -241,55 +241,93 @@ export default function GenerateIdeasButton() {
     let y = 0;
     let style = { shape: 'square', fillColor: 'yellow' };
     let geometry = null;
+    let positionDetermined = false;
   
     try {
       const selection = await miro.board.getSelection();
       const stickies = selection.filter(item => item.type === 'sticky_note');
   
       if (stickies.length > 0) {
-        const totalX = stickies.reduce((sum, s) => sum + s.x, 0);
-        const totalY = stickies.reduce((sum, s) => sum + s.y, 0);
-        x = totalX / stickies.length + 400;
-        y = totalY / stickies.length;
+        // Filter out stickies with invalid coordinates
+        const validStickies = stickies.filter(s => {
+          return typeof s.x === 'number' && !isNaN(s.x) && isFinite(s.x) &&
+                 typeof s.y === 'number' && !isNaN(s.y) && isFinite(s.y);
+        });
   
-        const ref = await miro.board.getById(stickies[0].id);
-
-        if (ref.style) {
-          style = { 
-            ...ref.style,
-            fillColor: 'yellow'
-          };
+        if (validStickies.length > 0) {
+          // Calculate average position from valid stickies only
+          const totalX = validStickies.reduce((sum, s) => sum + s.x, 0);
+          const totalY = validStickies.reduce((sum, s) => sum + s.y, 0);
+          x = totalX / validStickies.length + 400;
+          y = totalY / validStickies.length;
+          positionDetermined = true;
+          
+          // Get a reference for style/geometry from a valid sticky
+          const ref = await miro.board.getById(validStickies[0].id);
+          if (ref && ref.style) {
+            style = { 
+              ...ref.style,
+              fillColor: 'yellow'
+            };
+          }
+  
+          // Copy the complete geometry if available
+          if (ref && ref.geometry) {
+            geometry = { ...ref.geometry };
+            console.log('✅ Using reference sticky geometry:', geometry);
+          }
+        } else {
+          // Handle case where all stickies have invalid coordinates
+          console.log('⚠️ All selected stickies have invalid coordinates (possibly in a table)');
         }
+      }
   
-        // Copy the complete geometry from the reference sticky
-        if (ref.geometry) {
-          geometry = { ...ref.geometry };
-          console.log('✅ Using complete reference sticky geometry:', geometry);
-        }
-  
-        console.log('✅ Using reference sticky geometry:', geometry);
-      } else {
+      // If we couldn't get valid positions from stickies, use the viewport center
+      if (!positionDetermined) {
         const viewport = await miro.board.viewport.get();
         x = viewport.x + viewport.width / 2;
         y = viewport.y + viewport.height / 2;
-        console.log('ℹ️ No selection, using viewport center at', { x, y });
+        console.log('ℹ️ Using viewport center at', { x, y });
       }
     } catch (err) {
       console.error('⚠️ Failed to get selection or viewport:', err);
+      
+      // Final fallback if everything fails
+      try {
+        const viewport = await miro.board.viewport.get();
+        x = viewport.x + viewport.width / 2;
+        y = viewport.y + viewport.height / 2;
+        console.log('🔄 Fallback to viewport center after error:', { x, y });
+      } catch (viewportErr) {
+        // Last resort fallback
+        x = 0;
+        y = 0;
+        console.error('⛔ Using origin (0,0) as last resort after failing to get viewport');
+      }
     }
   
     try {
+      // Final validation to ensure we never have invalid coordinates
+      if (!isFinite(x) || !isFinite(y)) {
+        console.warn('⚠️ Invalid coordinates detected, resetting to (0,0)');
+        x = 0;
+        y = 0;
+      }
+      
       const payload = {
         content: contentToAdd,
         x,
         y,
         style,
-        ...(geometry ? { geometry } : {})  // Add the complete geometry if it exists
+        ...(geometry ? { geometry } : {})
       };
   
       console.log('📤 Creating sticky with payload:', payload);
       const newSticky = await miro.board.createStickyNote(payload);
       console.log('✅ Created sticky note:', newSticky);
+      
+      // Make the new sticky visible by selecting it
+      await miro.board.select({id: newSticky.id});
     } catch (err) {
       console.error('❌ Failed to create sticky note:', err);
     }
