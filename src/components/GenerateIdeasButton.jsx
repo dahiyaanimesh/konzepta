@@ -258,7 +258,7 @@ export default function GenerateIdeasButton() {
           // Calculate average position from valid stickies only
           const totalX = validStickies.reduce((sum, s) => sum + s.x, 0);
           const totalY = validStickies.reduce((sum, s) => sum + s.y, 0);
-          x = totalX / validStickies.length + 400;
+          x = totalX / validStickies.length + 150;
           y = totalY / validStickies.length;
           positionDetermined = true;
           
