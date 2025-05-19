@@ -52,7 +52,7 @@ if not DEFAULT_BOARD_ID:
     logger.warning("No default MIRO_BOARD_ID set - this is okay, board ID will be obtained from requests")
 
 # --- API Models config --- 
-TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4.1-nano")
+TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4.1")
 IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-1")
 IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
 IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "high")
@@ -404,83 +404,70 @@ def generate_text2image_sketches():
 
 @app.route('/generate-image-ideas', methods=['POST'])
 def generate_image_ideas():
-    """Generate and directly add images to Miro board using OpenAI DALL-E"""
-    start_time = time.time()
+    """Generate 3 image ideas for each prompt (free text or selected shapes)
+       and post them side‑by‑side on the board."""
+    t0 = time.time()
 
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-
-        selected_shape_ids = data.get("selectedShapeIds", [])
-        content = data.get("content", "")
-        # Use board ID from request if provided, otherwise fall back to env variable
-        board_id = data.get("boardId", DEFAULT_BOARD_ID)
-
+        # -------- request & sanity checks --------
+        data      = request.get_json(force=True) or {}
+        sel_ids   = data.get("selectedShapeIds", [])
+        free_txt  = (data.get("content") or "").strip()
+        board_id  = data.get("boardId") or DEFAULT_BOARD_ID
         if not board_id:
-            return jsonify({"error": "No board ID provided in request. Please specify 'boardId' parameter."}), 400
+            return jsonify(error="No board ID provided"), 400
+        if not sel_ids and not free_txt:
+            return jsonify(error="No content or shape IDs provided"), 400
 
-        logger.info(f"Using board ID: {board_id}")
+        # -------- placement & geometry --------
+        pos = data.get("positionData") or {
+            "x": 0, "y": 0, "origin": "center", "relativeTo": "canvas_center"
+        }
+        geo = data.get("geometryData") or {"width": 600, "height": 600}
+        geo.setdefault("height", geo["width"])          # keeping it square.
+        offset = geo["width"] + 50                      # maintaining a gap between images.
 
-        # Get position data directly from the frontend if available
-        position_data = None
-        if "positionData" in data and data["positionData"]:
-            position_data = data["positionData"]
-            logger.info(f"Received position data from frontend: {position_data}")
+        # -------- gather prompt strings --------
+        prompts      = []
+        miro_headers = {"Authorization": f"Bearer {MIRO_TOKEN}",
+                        "accept": "application/json"}
 
-            # Make sure the position data contains the required fields
-            if not all(k in position_data for k in ["x", "y"]):
-                logger.warning(f"Invalid position data received: {position_data}")
-                position_data = None
+        def clean(text: str) -> str:
+            return html.unescape(clean_html(text or "")).strip()
 
-        # Use default position if not provided or invalid
-        if not position_data:
-            position_data = {
-                "x": 0,
-                "y": 0,
-                "origin": "center",
-                "relativeTo": "canvas_center"
-            }
-            logger.warning(f"Using default position data: {position_data}")
+        # 1. selected shapes
+        for _id in sel_ids:
+            r = requests.get(f"https://api.miro.com/v2/boards/{board_id}/items/{_id}",
+                             headers=miro_headers, timeout=8)
+            if r.status_code != 200:
+                logger.warning("Couldn’t fetch %s (%s)", _id, r.status_code)
+                continue
+            item = r.json()
+            if item.get("type") not in {"sticky_note", "shape", "text"}:
+                continue
+            # try a few fields in order
+            candidates = [
+                item.get("data", {}).get("content"),
+                item.get("data", {}).get("plainText"),
+                item.get("text"),
+                item.get("title")
+            ]
+            extracted = next((clean(c) for c in candidates if clean(c)), "")
+            if extracted:
+                prompts.append(extracted)
 
-        # Get geometry data from the frontend if available
-        geometry = None
-        if "geometryData" in data and data["geometryData"]:
-            geometry = data["geometryData"]
-            logger.info(f"Received geometry data from frontend: {geometry}")
+        # 2. free‑form text from request body.
+        if free_txt:
+            prompts.append(free_txt)
 
-        # Use default geometry if not provided
-        if not geometry:
-            geometry = {
-                "width": 600,
-                "height": 600
-            }
-            logger.info(f"Using default geometry: {geometry}")
-        elif "width" in geometry and "height" not in geometry:
-            # If only width is provided, make it square
-            geometry["height"] = geometry["width"]
+        if not prompts:
+            return jsonify(status="no_valid_shapes_found"), 200
 
-        # Ensure position_data has correct format for Miro API
-        if "origin" not in position_data:
-            position_data["origin"] = "center"
-
-        logger.info(f"Final position data to be used: {position_data}")
-        logger.info(f"Final geometry data to be used: {geometry}")
-
-        # Initialize counter
+        # -------- generate & upload --------
+        client       = get_openai_client()
         images_added = 0
-        client = get_openai_client()
 
-        # Method 1: If content is directly provided in the request
-        if content:
-            logger.info("Using provided content directly")
-
-            # Generate image prompt from the content
-            prompt = content.strip()
-            if not prompt:
-                return jsonify({"error": "Empty content provided"}), 400
-
-            # Create prompt for DALL-E
+        for prompt in prompts:
             full_prompt = (
                 f"An image illustrating the core ideas of a UX brainstorming session. "
                 f"Theme: '{prompt}'. "
@@ -490,221 +477,64 @@ def generate_image_ideas():
                 f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
             )
 
-            try:
-                # Use model to generate image
-                image_params = {
-                    "model": IMAGE_MODEL,
-                    "prompt": full_prompt,
-                    "size": IMAGE_SIZE,
-                    "n": 1
-                }
-
-                # Add quality parameter if using compatible model
-                if IMAGE_MODEL == "dall-e-3":
-                    image_params["quality"] = IMAGE_QUALITY
-
-                response = client.images.generate(**image_params)
-
-                # Handle the image data based on what's available
-                if hasattr(response.data[0], 'b64_json') and response.data[0].b64_json:
-                    # Use base64 data if available
-                    image_b64 = response.data[0].b64_json
-                    image_bytes = base64.b64decode(image_b64)
-                elif hasattr(response.data[0], 'url') and response.data[0].url:
-                    # Download from URL if base64 not available
-                    image_url = response.data[0].url
-                    image_response = requests.get(image_url, timeout=10)
-                    if image_response.status_code != 200:
-                        logger.error(f"Failed to download image from URL: {image_response.status_code}")
-                        return jsonify({"error": "Failed to download generated image"}), 500
-                    image_bytes = image_response.content
-                else:
-                    logger.error("No image data or URL available in the response")
-                    return jsonify({"error": "No image data received from API"}), 500
-
-                # Save to temporary file
-                temp_file = None
-                try:
-                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                    temp_file.write(image_bytes)
-                    temp_file.close()
-                    temp_file_path = temp_file.name
-
-                    # Open the file and prepare for upload
-                    with open(temp_file_path, 'rb') as image_file:
-                        files = {
-                            'resource': ('image.png', image_file, 'image/png')
-                        }
-
-                        headers = {
-                            "Authorization": f"Bearer {MIRO_TOKEN}",
-                            "accept": "application/json"
-                        }
-
-                        logger.info(f"Posting image to Miro board {board_id} with position: {position_data}")
-
-                        post_resp = requests.post(
-                            f"https://api.miro.com/v2/boards/{board_id}/images",
-                            headers=headers,
-                            files=files,
-                            data={
-                                "position": json.dumps(position_data),
-                                "geometry": json.dumps(geometry),
-                                "data": json.dumps({"title": prompt[:50] if len(prompt) > 50 else prompt})
-                            },
-                            timeout=10
-                        )
-
-                        if post_resp.status_code in [200, 201, 202]:
-                            response_data = post_resp.json()
-                            logger.info(f"Image posted to Miro board - Response: {response_data}")
-                            if 'id' in response_data:
-                                logger.info(f"Image ID on Miro board: {response_data['id']}")
-                            images_added += 1
-                        else:
-                            logger.warning(
-                                f"Failed to post image to Miro. Status: {post_resp.status_code}. Response: {post_resp.text}")
-                finally:
-                    if temp_file and os.path.exists(temp_file.name):
-                        os.unlink(temp_file.name)
-            except Exception as e:
-                logger.error(f"Error generating/uploading image: {str(e)}")
-                logger.error(traceback.format_exc())
-
-        # Method 2: Using selected shapes from Miro
-        elif selected_shape_ids:
-            headers = {
-                "Authorization": f"Bearer {MIRO_TOKEN}",
-                "accept": "application/json"
-            }
-
-            response = requests.get(
-                f"https://api.miro.com/v2/boards/{board_id}/items",
-                headers=headers,
-                timeout=10
+            rsp = client.images.generate(
+                model = IMAGE_MODEL,
+                prompt= full_prompt,
+                size  = IMAGE_SIZE,
+                n     = 3,
+                **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
             )
-            if response.status_code != 200:
-                return jsonify({"error": f"Failed to fetch Miro items: {response.status_code}"}), 500
 
-            shape_items = []
-            for item in response.json().get("data", []):
-                if item.get("type") in ["shape", "sticky_note", "text"] and item.get("id") in selected_shape_ids:
-                    raw_text = item.get("data", {}).get("content", "")
-                    raw_text = clean_html(raw_text)
-                    raw_text = html.unescape(raw_text)
-
-                    if raw_text.strip():
-                        shape_items.append({
-                            "id": item.get("id", "unknown"),
-                            "text": raw_text.strip()
-                        })
-
-            if not shape_items:
-                return jsonify({"status": "no_valid_shapes_found"}), 200
-
-            for shape in shape_items:
-                raw_text = shape.get("text", "").strip()
-
-                full_prompt = (
-                    f"An abstract concept sketch in a UX brainstorming session. "
-                    f"Theme: '{raw_text}'. Simple, clean, professional digital sketch with BRIGHT BOLD COLORS on pure white background. "
-                    f"Very high contrast. Minimal design. No text. Use simple lines and shapes with bright primary colors."
-                )
-
-                try:
-                    image_params = {
-                        "model": IMAGE_MODEL,
-                        "prompt": full_prompt,
-                        "size": IMAGE_SIZE,
-                        "n": 1
-                    }
-
-                    if IMAGE_MODEL == "dall-e-3":
-                        image_params["quality"] = IMAGE_QUALITY
-
-                    response = client.images.generate(**image_params)
-
-                    # Handle the image data based on what's available
-                    if hasattr(response.data[0], 'b64_json') and response.data[0].b64_json:
-                        # Use base64 data if available
-                        image_b64 = response.data[0].b64_json
-                        image_bytes = base64.b64decode(image_b64)
-                    elif hasattr(response.data[0], 'url') and response.data[0].url:
-                        # Download from URL if base64 not available
-                        image_url = response.data[0].url
-                        image_response = requests.get(image_url, timeout=10)
-                        if image_response.status_code != 200:
-                            logger.error(f"Failed to download image from URL: {image_response.status_code}")
-                            continue
-                        image_bytes = image_response.content
-                    else:
-                        logger.error("No image data or URL available in the response")
+            for idx, img in enumerate(rsp.data, 1):
+                # ---- decode regardless of response format ----
+                if getattr(img, "b64_json", None):
+                    img_bytes = base64.b64decode(img.b64_json)
+                elif getattr(img, "url", None):
+                    dl = requests.get(img.url, timeout=10)
+                    if dl.status_code != 200:
+                        logger.warning("Couldn’t download image %s: %s", idx, dl.status_code)
                         continue
+                    img_bytes = dl.content
+                else:
+                    logger.warning("No image payload returned for prompt %s", prompt[:30])
+                    continue
 
-                    temp_file = None
-                    try:
-                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                        temp_file.write(image_bytes)
-                        temp_file.close()
-                        temp_file_path = temp_file.name
+                # ---- temporary file for upload ----
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
+                    tf.write(img_bytes)
+                    tmp_path = tf.name
 
-                        with open(temp_file_path, 'rb') as image_file:
-                            files = {
-                                'resource': ('image.png', image_file, 'image/png')
-                            }
+                cur_pos = {**pos, "x": pos["x"] + (idx - 1) * offset}
 
-                            headers = {
-                                "Authorization": f"Bearer {MIRO_TOKEN}",
-                                "accept": "application/json"
-                            }
+                with open(tmp_path, "rb") as fh:
+                    up = requests.post(
+                        f"https://api.miro.com/v2/boards/{board_id}/images",
+                        headers=miro_headers,
+                        files={'resource': ('image.png', fh, 'image/png')},
+                        data={
+                            "position": json.dumps(cur_pos),
+                            "geometry": json.dumps(geo),
+                            "data": json.dumps({"title": f"{prompt[:40]} – idea{idx}"})
+                        },
+                        timeout=15
+                    )
+                os.unlink(tmp_path)
 
-                            logger.info(f"Posting image to Miro board {board_id} with position: {position_data}")
+                if up.status_code in (200, 201, 202):
+                    images_added += 1
+                else:
+                    logger.warning("Upload failed %s: %s", up.status_code, up.text)
 
-                            post_resp = requests.post(
-                                f"https://api.miro.com/v2/boards/{board_id}/images",
-                                headers=headers,
-                                files=files,
-                                data={
-                                    "position": json.dumps(position_data),
-                                    "geometry": json.dumps(geometry),
-                                    "data": json.dumps({"title": raw_text[:50] if len(raw_text) > 50 else raw_text})
-                                },
-                                timeout=10
-                            )
-
-                            if post_resp.status_code in [200, 201, 202]:
-                                response_data = post_resp.json()
-                                logger.info(f"Image posted to Miro board - Response: {response_data}")
-                                if 'id' in response_data:
-                                    logger.info(f"Image ID on Miro board: {response_data['id']}")
-                                images_added += 1
-                                logger.info(f"Image posted to Miro for shape {shape['id']}")
-                            else:
-                                logger.warning(
-                                    f"Failed to post image for shape {shape['id']}. Status: {post_resp.status_code}. Response: {post_resp.text}")
-                    finally:
-                        if temp_file and os.path.exists(temp_file.name):
-                            os.unlink(temp_file.name)
-
-                except Exception as e:
-                    logger.error(f"Error generating image for shape {shape['id']}: {str(e)}")
-                    logger.error(traceback.format_exc())
-        else:
-            return jsonify({"error": "No content or shape IDs provided"}), 400
-
-        processing_time = time.time() - start_time
-        logger.info(f"Image generation and upload completed in {processing_time:.2f}s")
-
-        return jsonify({
-            "status": "success",
-            "images_added": images_added,
-            "processing_time_seconds": round(processing_time, 2)
-        })
+        return jsonify(
+            status="success",
+            images_added=images_added,
+            processing_time_seconds=round(time.time() - t0, 2)
+        )
 
     except Exception as e:
-        logger.error(f"Server error: {str(e)}")
-        logger.error(traceback.format_exc())
-        return jsonify({"error": "Server error", "details": str(e)}), 500
+        logger.exception("generate-image-ideas failed")
+        return jsonify(error=str(e)), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5050))
