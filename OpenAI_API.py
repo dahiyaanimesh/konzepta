@@ -55,7 +55,7 @@ if not DEFAULT_BOARD_ID:
 TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4.1")
 IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-1")
 IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
-IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "high")
+IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "medium")
 
 # --- Cache config ---
 REQUEST_CACHE = {}
@@ -437,24 +437,28 @@ def generate_image_ideas():
 
         # 1. selected shapes
         for _id in sel_ids:
-            r = requests.get(f"https://api.miro.com/v2/boards/{board_id}/items/{_id}",
-                             headers=miro_headers, timeout=8)
-            if r.status_code != 200:
-                logger.warning("Couldn’t fetch %s (%s)", _id, r.status_code)
+            try:
+                r = requests.get(f"https://api.miro.com/v2/boards/{board_id}/items/{_id}",
+                                headers=miro_headers, timeout=8)
+                if r.status_code != 200:
+                    logger.warning("Couldn't fetch %s (%s)", _id, r.status_code)
+                    continue
+                item = r.json()
+                if item.get("type") not in {"sticky_note", "shape", "text"}:
+                    continue
+                # try a few fields in order
+                candidates = [
+                    item.get("data", {}).get("content"),
+                    item.get("data", {}).get("plainText"),
+                    item.get("text"),
+                    item.get("title")
+                ]
+                extracted = next((clean(c) for c in candidates if clean(c)), "")
+                if extracted:
+                    prompts.append(extracted)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Error fetching Miro item {_id}: {str(e)}")
                 continue
-            item = r.json()
-            if item.get("type") not in {"sticky_note", "shape", "text"}:
-                continue
-            # try a few fields in order
-            candidates = [
-                item.get("data", {}).get("content"),
-                item.get("data", {}).get("plainText"),
-                item.get("text"),
-                item.get("title")
-            ]
-            extracted = next((clean(c) for c in candidates if clean(c)), "")
-            if extracted:
-                prompts.append(extracted)
 
         # 2. free‑form text from request body.
         if free_txt:
@@ -468,62 +472,91 @@ def generate_image_ideas():
         images_added = 0
 
         for prompt in prompts:
-            full_prompt = (
-                f"An image illustrating the core ideas of a UX brainstorming session. "
-                f"Theme: '{prompt}'. "
-                f"Create a clean, high-quality, professional image that visually represents the theme. "
-                f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
-                f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple."
-                f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
-            )
+            try:
+                full_prompt = (
+                    f"An image illustrating the core ideas of a UX brainstorming session. "
+                    f"Theme: '{prompt}'. "
+                    f"Create a clean, high-quality, professional image that visually represents the theme. "
+                    f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
+                    f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple."
+                    f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
+                )
 
-            rsp = client.images.generate(
-                model = IMAGE_MODEL,
-                prompt= full_prompt,
-                size  = IMAGE_SIZE,
-                n     = 3,
-                **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
-            )
+                rsp = client.images.generate(
+                    model = IMAGE_MODEL,
+                    prompt= full_prompt,
+                    size  = IMAGE_SIZE,
+                    n     = 3,
+                    **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
+                )
 
-            for idx, img in enumerate(rsp.data, 1):
-                # ---- decode regardless of response format ----
-                if getattr(img, "b64_json", None):
-                    img_bytes = base64.b64decode(img.b64_json)
-                elif getattr(img, "url", None):
-                    dl = requests.get(img.url, timeout=10)
-                    if dl.status_code != 200:
-                        logger.warning("Couldn’t download image %s: %s", idx, dl.status_code)
+                for idx, img in enumerate(rsp.data, 1):
+                    try:
+                        # ---- decode regardless of response format ----
+                        if getattr(img, "b64_json", None):
+                            img_bytes = base64.b64decode(img.b64_json)
+                        elif getattr(img, "url", None):
+                            dl = requests.get(img.url, timeout=10)
+                            if dl.status_code != 200:
+                                logger.warning("Couldn't download image %s: %s", idx, dl.status_code)
+                                continue
+                            img_bytes = dl.content
+                        else:
+                            logger.warning("No image payload returned for prompt %s", prompt[:30])
+                            continue
+
+                        # ---- temporary file for upload ----
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
+                            tf.write(img_bytes)
+                            tmp_path = tf.name
+
+                        cur_pos = {**pos, "x": pos["x"] + (idx - 1) * offset}
+
+                        # Add retry logic for upload
+                        max_retries = 3
+                        retry_delay = 2  # seconds
+                        upload_success = False
+                        
+                        for retry in range(max_retries):
+                            try:
+                                with open(tmp_path, "rb") as fh:
+                                    up = requests.post(
+                                        f"https://api.miro.com/v2/boards/{board_id}/images",
+                                        headers=miro_headers,
+                                        files={'resource': ('image.png', fh, 'image/png')},
+                                        data={
+                                            "position": json.dumps(cur_pos),
+                                            "geometry": json.dumps(geo),
+                                            "data": json.dumps({"title": f"{prompt[:40]} – idea{idx}"})
+                                        },
+                                        timeout=30
+                                    )
+                                
+                                if up.status_code in (200, 201, 202):
+                                    images_added += 1
+                                    upload_success = True
+                                    break
+                                else:
+                                    logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with status {up.status_code}: {up.text}")
+                                    time.sleep(retry_delay)
+                            except requests.exceptions.RequestException as e:
+                                logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with error: {str(e)}")
+                                time.sleep(retry_delay)
+                        
+                        # Always clean up the temporary file
+                        try:
+                            os.unlink(tmp_path)
+                        except (OSError, IOError) as e:
+                            logger.warning(f"Failed to remove temporary file {tmp_path}: {str(e)}")
+                        
+                        if not upload_success:
+                            logger.error(f"Failed to upload image after {max_retries} attempts")
+                    except Exception as e:
+                        logger.error(f"Error processing image {idx} for prompt '{prompt[:30]}': {str(e)}")
                         continue
-                    img_bytes = dl.content
-                else:
-                    logger.warning("No image payload returned for prompt %s", prompt[:30])
-                    continue
-
-                # ---- temporary file for upload ----
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
-                    tf.write(img_bytes)
-                    tmp_path = tf.name
-
-                cur_pos = {**pos, "x": pos["x"] + (idx - 1) * offset}
-
-                with open(tmp_path, "rb") as fh:
-                    up = requests.post(
-                        f"https://api.miro.com/v2/boards/{board_id}/images",
-                        headers=miro_headers,
-                        files={'resource': ('image.png', fh, 'image/png')},
-                        data={
-                            "position": json.dumps(cur_pos),
-                            "geometry": json.dumps(geo),
-                            "data": json.dumps({"title": f"{prompt[:40]} – idea{idx}"})
-                        },
-                        timeout=15
-                    )
-                os.unlink(tmp_path)
-
-                if up.status_code in (200, 201, 202):
-                    images_added += 1
-                else:
-                    logger.warning("Upload failed %s: %s", up.status_code, up.text)
+            except Exception as e:
+                logger.error(f"Error generating images for prompt '{prompt[:30]}': {str(e)}")
+                continue
 
         return jsonify(
             status="success",
@@ -533,7 +566,7 @@ def generate_image_ideas():
 
     except Exception as e:
         logger.exception("generate-image-ideas failed")
-        return jsonify(error=str(e)), 500
+        return jsonify(error=str(e), status="error"), 500
 
 
 if __name__ == '__main__':
