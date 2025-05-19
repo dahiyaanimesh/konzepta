@@ -7,7 +7,6 @@ import re
 import html
 import base64
 from io import BytesIO
-from PIL import Image  # Add Pillow for image processing
 import requests
 import tempfile
 import logging
@@ -85,32 +84,6 @@ def clean_html(raw_html):
     if not raw_html:
         return ""
     return re.sub(r"<.*?>", "", raw_html).strip()
-
-# --- Image optimization utility ---
-def optimize_image(img_bytes, max_size=600):
-    """Resize and optimize an image to reduce memory usage and file size"""
-    try:
-        img = Image.open(BytesIO(img_bytes))
-        
-        # Resize if larger than max_size
-        if img.width > max_size or img.height > max_size:
-            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-        
-        # Convert to RGB if needed (e.g., if RGBA)
-        if img.mode == 'RGBA':
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            background.paste(img, mask=img.split()[3])
-            img = background
-        
-        # Save optimized image
-        output = BytesIO()
-        img.save(output, format='JPEG', quality=85, optimize=True)
-        output.seek(0)
-        
-        return output.getvalue()
-    except Exception as e:
-        logger.warning(f"Image optimization failed: {str(e)}")
-        return img_bytes  # Return original if optimization fails
 
 # --- OpenAI Client ---
 def get_openai_client():
@@ -509,94 +482,86 @@ def generate_image_ideas():
                     f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
                 )
 
-                # Generate images one at a time to reduce memory usage (instead of n=3)
-                for idx in range(1, 4):  # Still create 3 images, but one by one
-                    try:
-                        # Add delay between API calls to allow memory to be released
-                        if idx > 1:
-                            time.sleep(1)
-                            
-                        logger.info(f"Generating image {idx}/3 for prompt: {prompt[:30]}...")
-                        
-                        # Request a single image each time (n=1)
-                        rsp = client.images.generate(
-                            model = IMAGE_MODEL,
-                            prompt= full_prompt,
-                            size  = IMAGE_SIZE,
-                            n     = 1,  # Only generate one image at a time
-                            **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
-                        )
-                        
-                        img = rsp.data[0]
-                        
-                        # ---- decode regardless of response format ----
-                        img_bytes = None
-                        if getattr(img, "b64_json", None):
-                            img_bytes = base64.b64decode(img.b64_json)
-                        elif getattr(img, "url", None):
-                            dl = requests.get(img.url, timeout=10)
-                            if dl.status_code != 200:
-                                logger.warning("Couldn't download image %s: %s", idx, dl.status_code)
-                                continue
-                            img_bytes = dl.content
-                        else:
-                            logger.warning("No image payload returned for prompt %s", prompt[:30])
-                            continue
-                        
-                        # Optimize image to reduce memory usage and file size
-                        img_bytes = optimize_image(img_bytes, max_size=600)
-
-                        # ---- temporary file for upload ----
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tf:
-                            tf.write(img_bytes)
-                            tmp_path = tf.name
-
-                        cur_pos = {**pos, "x": pos["x"] + (idx - 1) * offset}
-
-                        # Add retry logic for upload
-                        max_retries = 3
-                        retry_delay = 2  # seconds
-                        upload_success = False
-                        
-                        for retry in range(max_retries):
-                            try:
-                                with open(tmp_path, "rb") as fh:
-                                    up = requests.post(
-                                        f"https://api.miro.com/v2/boards/{board_id}/images",
-                                        headers=miro_headers,
-                                        files={'resource': ('image.jpg', fh, 'image/jpeg')},
-                                        data={
-                                            "position": json.dumps(cur_pos),
-                                            "geometry": json.dumps(geo),
-                                            "data": json.dumps({"title": f"{prompt[:40]} – idea{idx}"})
-                                        },
-                                        timeout=30
-                                    )
-                                
-                                if up.status_code in (200, 201, 202):
-                                    images_added += 1
-                                    upload_success = True
-                                    break
-                                else:
-                                    logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with status {up.status_code}: {up.text}")
-                                    time.sleep(retry_delay)
-                            except requests.exceptions.RequestException as e:
-                                logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with error: {str(e)}")
-                                time.sleep(retry_delay)
-                        
-                        # Always clean up the temporary file
-                        try:
-                            os.unlink(tmp_path)
-                        except (OSError, IOError) as e:
-                            logger.warning(f"Failed to remove temporary file {tmp_path}: {str(e)}")
-                        
-                        if not upload_success:
-                            logger.error(f"Failed to upload image after {max_retries} attempts")
-                    except Exception as e:
-                        logger.error(f"Error processing image {idx} for prompt '{prompt[:30]}': {str(e)}")
+                # Generate just one image
+                logger.info(f"Generating image for prompt: {prompt[:30]}...")
+                
+                # Set image size to smaller to reduce memory usage
+                img_size = "512x512"  # Using smaller size than default to reduce memory usage
+                
+                # Request a single image
+                rsp = client.images.generate(
+                    model = IMAGE_MODEL,
+                    prompt = full_prompt,
+                    size = img_size,
+                    n = 1,
+                    **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
+                )
+                
+                img = rsp.data[0]
+                
+                # ---- decode regardless of response format ----
+                img_bytes = None
+                if getattr(img, "b64_json", None):
+                    img_bytes = base64.b64decode(img.b64_json)
+                elif getattr(img, "url", None):
+                    dl = requests.get(img.url, timeout=10)
+                    if dl.status_code != 200:
+                        logger.warning("Couldn't download image: %s", dl.status_code)
                         continue
+                    img_bytes = dl.content
+                else:
+                    logger.warning("No image payload returned for prompt %s", prompt[:30])
+                    continue
+                
+                # ---- temporary file for upload ----
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
+                    tf.write(img_bytes)
+                    tmp_path = tf.name
+
+                # Use center position instead of offset 
+                cur_pos = pos
+
+                # Add retry logic for upload
+                max_retries = 3
+                retry_delay = 2  # seconds
+                upload_success = False
+                
+                for retry in range(max_retries):
+                    try:
+                        with open(tmp_path, "rb") as fh:
+                            up = requests.post(
+                                f"https://api.miro.com/v2/boards/{board_id}/images",
+                                headers=miro_headers,
+                                files={'resource': ('image.png', fh, 'image/png')},
+                                data={
+                                    "position": json.dumps(cur_pos),
+                                    "geometry": json.dumps(geo),
+                                    "data": json.dumps({"title": f"{prompt[:40]} – idea"})
+                                },
+                                timeout=30
+                            )
+                        
+                        if up.status_code in (200, 201, 202):
+                            images_added += 1
+                            upload_success = True
+                            break
+                        else:
+                            logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with status {up.status_code}: {up.text}")
+                            time.sleep(retry_delay)
+                    except requests.exceptions.RequestException as e:
+                        logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with error: {str(e)}")
+                        time.sleep(retry_delay)
+                
+                # Always clean up the temporary file
+                try:
+                    os.unlink(tmp_path)
+                except (OSError, IOError) as e:
+                    logger.warning(f"Failed to remove temporary file {tmp_path}: {str(e)}")
+                
+                if not upload_success:
+                    logger.error(f"Failed to upload image after {max_retries} attempts")
             except Exception as e:
-                logger.error(f"Error generating images for prompt '{prompt[:30]}': {str(e)}")
+                logger.error(f"Error generating image for prompt '{prompt[:30]}': {str(e)}")
                 continue
 
         return jsonify(
