@@ -55,7 +55,7 @@ if not DEFAULT_BOARD_ID:
 TEXT_MODEL = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4.1")
 IMAGE_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-1")
 IMAGE_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1024x1024")
-IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "medium")
+IMAGE_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "low")
 
 # --- Cache config ---
 REQUEST_CACHE = {}
