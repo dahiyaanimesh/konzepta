@@ -2,146 +2,150 @@
 
 import config from '../config';
 
-/**
- * Generates images based on content from sticky notes and adds them to the Miro board
- * @param {Function} setImageLoading Loading state setter function
- * @param {String} stickyNoteText Text content to generate image from
- * @returns {Promise<void>}
- */
+//* -----------------  internal helpers  ----------------- */
+
+function calculatePlacement(items) {
+  if (!items || items.length === 0) return null;
+
+  const avgX = items.reduce((sum, i) => sum + (i.x ?? 0), 0) / items.length;
+  const avgY = items.reduce((sum, i) => sum + (i.y ?? 0), 0) / items.length;
+
+  const positionData = {
+    x: avgX + 400,
+    y: avgY,
+    origin: 'center'
+  };
+
+  let width = 600;
+  if (items[0]?.geometry?.width) {
+    width = items[0].geometry.width;
+  }
+  const geometryData = { width, height: width };
+
+  return { positionData, geometryData };
+}
+
+async function defaultPlacement() {
+  const viewport = await miro.board.viewport.get();
+  return {
+    positionData: {
+      x: viewport.x + viewport.width / 2,
+      y: viewport.y + viewport.height / 2,
+      origin: 'center'
+    },
+    geometryData: { width: 600, height: 600 }
+  };
+}
+
+/* -----------------  public helpers  ----------------- */
+
+export async function getCurrentBoardId() {
+  const boardInfo = await miro.board.getInfo();
+  return boardInfo.id;
+}
+
 export async function generateImageIdeas(setImageLoading, stickyNoteText) {
+  if (!stickyNoteText?.trim()) {
+    console.error('Empty sticky‑note content');
+    return;
+  }
+
   try {
-    // Set loading state to true
-    if (setImageLoading) setImageLoading(true);
-    
-    if (!stickyNoteText || !stickyNoteText.trim()) {
-      console.error("Empty sticky note content");
-      if (setImageLoading) setImageLoading(false);
-      return;
+    setImageLoading?.(true);
+
+    let placement = null;
+    try {
+      const selection = await miro.board.getSelection();
+      const valid = selection.filter(i =>
+        ['sticky_note', 'shape', 'text'].includes(i.type)
+      );
+      placement = calculatePlacement(valid);
+    } catch (err) {
+      console.debug('Selection fallback:', err);
     }
-    
-    console.log("Generating image for content:", stickyNoteText.substring(0, 50) + (stickyNoteText.length > 50 ? "..." : ""));
-    
-    // Get the current board ID
+
+    if (!placement) placement = await defaultPlacement();
+
     const boardId = await getCurrentBoardId();
-    console.log("Using current board ID:", boardId);
-    
-    // Make the POST request to the backend
-    const response = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ 
-        content: stickyNoteText,
-        boardId: boardId  // Send the board ID to the backend
-      }), 
-      credentials: 'include',
+
+    const payload = {
+      content: stickyNoteText,
+      boardId,
+      positionData: placement.positionData,
+      geometryData: placement.geometryData
+    };
+
+    const res = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'include'
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image generation failed:", response.status, errorText);
-      if (setImageLoading) setImageLoading(false);
-      return;
-    }
-
-    const result = await response.json();
-    
-    if (result.status === "success") {
-      console.log(`${result.images_added} image(s) added to Miro board in ${result.processing_time_seconds || 0}s`);
-    } else if (result.status === "no_valid_shapes_found") {
-      console.warn("No valid text found to generate images from.");
-    } else if (result.error) {
-      console.error("API Error:", result.error);
+    const result = await res.json();
+    if (!res.ok || result.status !== 'success') {
+      console.warn(result.error || 'Image generation failed');
     } else {
-      console.warn("Could not generate images. Please try again.");
+      console.info('Image generation triggered; backend will place images directly');
     }
-
-  } catch (error) {
-    console.error("Network error:", error);
+  } catch (err) {
+    console.error('Image-gen error:', err);
   } finally {
-    // Reset loading state
-    if (setImageLoading) setImageLoading(false);
+    setImageLoading?.(false);
   }
 }
 
-/**
- * Selects sticky notes on the Miro board and generates images based on their content
- * @param {Function} setImageLoading Loading state setter function
- * @returns {Promise<void>}
- */
 export async function generateImagesFromSelection(setImageLoading) {
   try {
-    // Set loading state to true
-    if (setImageLoading) setImageLoading(true);
-    
-    // Get selection from Miro board
+    setImageLoading?.(true);
+
     const selection = await miro.board.getSelection();
-    const validItems = selection.filter(item => 
-      item.type === 'sticky_note' || 
-      item.type === 'shape' || 
-      item.type === 'text'
+    const validItems = selection.filter(i =>
+      ['sticky_note', 'shape', 'text'].includes(i.type)
     );
-    
     if (validItems.length === 0) {
-      console.warn("No sticky notes, shapes, or text selected on the board.");
-      if (setImageLoading) setImageLoading(false);
+      console.warn('No valid items selected');
       return;
     }
-    
-    const itemIds = validItems.map(item => item.id);
-    console.log(`Selected ${itemIds.length} items for image generation`);
-    
-    // Get the current board ID
+
+    const itemIds = validItems.map(i => i.id);
+    const { positionData, geometryData } = calculatePlacement(validItems);
     const boardId = await getCurrentBoardId();
-    console.log("Using current board ID:", boardId);
-    
-    // Make request to backend
-    const response = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ 
-        selectedShapeIds: itemIds,
-        boardId: boardId  // Send the board ID to the backend
-      }),
-      credentials: 'include',
+
+    const payload = {
+      selectedShapeIds: itemIds,
+      boardId,
+      positionData,
+      geometryData
+    };
+
+    const res = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'include'
     });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Image generation failed:", response.status, errorText);
-      if (setImageLoading) setImageLoading(false);
-      return;
-    }
-    
-    const result = await response.json();
-    
-    if (result.status === "success") {
-      console.log(`${result.images_added} image(s) added to Miro board`);
-    } else if (result.status === "no_valid_shapes_found") {
-      console.warn("No valid text found in the selected items.");
-    } else if (result.error) {
-      console.error("API Error:", result.error);
+
+    const result = await res.json();
+    if (!res.ok || result.status !== 'success') {
+      console.warn(result.error || 'Image generation failed');
     } else {
-      console.warn("Could not generate images. Please try again.");
+      console.info('Image generation triggered for selection');
     }
-    
-  } catch (error) {
-    console.error("Error generating images from selection:", error);
+  } catch (err) {
+    console.error('Image-gen selection error:', err);
   } finally {
-    if (setImageLoading) setImageLoading(false);
+    setImageLoading?.(false);
   }
 }
 
-// Add a function to get the current board ID
-export async function getCurrentBoardId() {
-  try {
-    const boardInfo = await miro.board.getInfo();
-    return boardInfo.id;
-  } catch (error) {
-    console.error('Error getting board ID:', error);
-    throw error;
-  }
-} 
+export async function createImageOnBoard(url, positionData, geometryData) {
+  await miro.board.createImage({
+    url,
+    x: positionData.x,
+    y: positionData.y,
+    origin: positionData.origin ?? 'center',
+    width: geometryData.width,
+    height: geometryData.height
+  });
+}
