@@ -485,14 +485,14 @@ def generate_image_ideas():
                 # Generate just one image
                 logger.info(f"Generating image for prompt: {prompt[:30]}...")
                 
-                # Set image size to smaller to reduce memory usage
-                img_size = "512x512"  # Using smaller size than default to reduce memory usage
+                # Use the standard size since smaller sizes aren't supported
+                # According to API error, supported values are: '1024x1024', '1024x1536', '1536x1024', and 'auto'
                 
                 # Request a single image
                 rsp = client.images.generate(
                     model = IMAGE_MODEL,
                     prompt = full_prompt,
-                    size = img_size,
+                    size = "1024x1024",  # Using standard size as smaller isn't supported
                     n = 1,
                     **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
                 )
