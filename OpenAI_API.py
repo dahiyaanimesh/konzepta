@@ -187,28 +187,32 @@ def generate_ideas():
             prompt = f"{custom_prompt}\n\nSticky Note: \"{clean_text}\""
         else:
             prompt = f"""
-You are an AI collaborator supporting UX designers and clients in a live ideation workshop. Your goal is to help the group keep exploring ideas—diverging, remixing, and questioning—not to finalize solutions.
-
-Based on the sticky note below, suggest **3 new sticky notes** that each:
-
-- Build on or reframe the current idea.
-- Spark new directions or tensions.
-- Use different thinking lenses (e.g., emotional, technical, absurd, inclusive, playful).
-
-Avoid fully-formed solutions. Focus on energizing the brainstorm with creative momentum. Use no more than **10 words** per sticky note.
-
-Sticky Note: "{clean_text}"
-
-Format your response like this (no markdown, asterisks, or hashes):
-
-Concept 1: Title of the Idea
-
-- Concept: 10 words max provoking further exploration or variation of the idea.
-
-Concept 2: ...
-
-Concept 3: ...
-""".strip()
+       
+            You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
+ 
+            Based on the sticky note below, suggest 3 new sticky notes that each:
+ 
+            - Reframe or expand the original thought to open new directions.
+ 
+            - Use different thinking lenses, including but not limited to: technical, sustainability, data-driven, time-sensitive, accessibility, risk-aware, regulatory, scalability, financial, commercial, user-centric, innovative, and visionary, to explore diverse perspectives.
+ 
+            - Pose a question, challenge an assumption, or introduce a fresh lens—not a defined concept.
+ 
+            Avoid naming tools, services, features, or systems. Do not propose fully-formed solutions. Focus on sparking curiosity, discussion, and creative momentum. Use clear, simple language understandable to both designers and clients. Limit each sticky note to 10 words or fewer.
+           
+            Sticky Note: "{clean_text}"
+             
+            Format your response like this (no markdown, asterisks, or hashes):
+             
+            Concept 1: Title of the Idea
+           
+            - Concept: 10 words max provoking further exploration or variation of the idea.
+             
+            Concept 2: ...
+             
+            Concept 3: ...
+           
+            """.strip()
 
         logger.info(f"Text Generation - Prompt (length: {len(prompt)})")
 
