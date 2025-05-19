@@ -283,23 +283,25 @@ export default function GenerateIdeasButton() {
                 
                 if (parent && typeof parent.x === 'number' && isFinite(parent.x)) {
                   // Add sticky to the board next to the frame/table instead of inside it
-                  x = parent.x + 50; // Place closer to the frame
+                  // Reduced offset to 20px for very close positioning
+                  x = parent.x + 20; // Place very close to the frame
                   y = parent.y; // Same vertical position as frame
                   console.log('📐 Positioning next to parent frame/table:', { x, y });
                 } else {
                   // If we can't get parent info, fall back to viewport
-                  x = validSticky.x + 100; // Reduced from 200px to 100px
+                  x = validSticky.x + 30; // Very small offset
                   y = validSticky.y;
                 }
               } catch (frameErr) {
                 console.warn('Could not get parent frame info:', frameErr);
                 // Fallback to direct position + offset
-                x = validSticky.x + 100; // Reduced from 200px to 100px
+                x = validSticky.x + 30; // Very small offset
                 y = validSticky.y;
               }
             } else {
               // Normal case - sticky is directly on board
-              x = validSticky.x + 100; // Reduced from 200px to 100px
+              // Very small offset for close positioning
+              x = validSticky.x + 30;
               y = validSticky.y; // Keep the same Y coordinate
             }
             
@@ -313,7 +315,7 @@ export default function GenerateIdeasButton() {
           } catch (err) {
             console.warn('⚠️ Could not get reference sticky details:', err);
             // Fallback to direct coordinates if we can't get full details
-            x = validSticky.x + 100;
+            x = validSticky.x + 30; // Very small offset
             y = validSticky.y;
           }
         } else {
