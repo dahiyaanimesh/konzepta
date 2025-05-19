@@ -7,6 +7,7 @@ import re
 import html
 import base64
 from io import BytesIO
+from PIL import Image  # Add Pillow for image processing
 import requests
 import tempfile
 import logging
@@ -84,6 +85,32 @@ def clean_html(raw_html):
     if not raw_html:
         return ""
     return re.sub(r"<.*?>", "", raw_html).strip()
+
+# --- Image optimization utility ---
+def optimize_image(img_bytes, max_size=600):
+    """Resize and optimize an image to reduce memory usage and file size"""
+    try:
+        img = Image.open(BytesIO(img_bytes))
+        
+        # Resize if larger than max_size
+        if img.width > max_size or img.height > max_size:
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        
+        # Convert to RGB if needed (e.g., if RGBA)
+        if img.mode == 'RGBA':
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[3])
+            img = background
+        
+        # Save optimized image
+        output = BytesIO()
+        img.save(output, format='JPEG', quality=85, optimize=True)
+        output.seek(0)
+        
+        return output.getvalue()
+    except Exception as e:
+        logger.warning(f"Image optimization failed: {str(e)}")
+        return img_bytes  # Return original if optimization fails
 
 # --- OpenAI Client ---
 def get_openai_client():
@@ -482,17 +509,28 @@ def generate_image_ideas():
                     f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
                 )
 
-                rsp = client.images.generate(
-                    model = IMAGE_MODEL,
-                    prompt= full_prompt,
-                    size  = IMAGE_SIZE,
-                    n     = 3,
-                    **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
-                )
-
-                for idx, img in enumerate(rsp.data, 1):
+                # Generate images one at a time to reduce memory usage (instead of n=3)
+                for idx in range(1, 4):  # Still create 3 images, but one by one
                     try:
+                        # Add delay between API calls to allow memory to be released
+                        if idx > 1:
+                            time.sleep(1)
+                            
+                        logger.info(f"Generating image {idx}/3 for prompt: {prompt[:30]}...")
+                        
+                        # Request a single image each time (n=1)
+                        rsp = client.images.generate(
+                            model = IMAGE_MODEL,
+                            prompt= full_prompt,
+                            size  = IMAGE_SIZE,
+                            n     = 1,  # Only generate one image at a time
+                            **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
+                        )
+                        
+                        img = rsp.data[0]
+                        
                         # ---- decode regardless of response format ----
+                        img_bytes = None
                         if getattr(img, "b64_json", None):
                             img_bytes = base64.b64decode(img.b64_json)
                         elif getattr(img, "url", None):
@@ -504,9 +542,12 @@ def generate_image_ideas():
                         else:
                             logger.warning("No image payload returned for prompt %s", prompt[:30])
                             continue
+                        
+                        # Optimize image to reduce memory usage and file size
+                        img_bytes = optimize_image(img_bytes, max_size=600)
 
                         # ---- temporary file for upload ----
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tf:
                             tf.write(img_bytes)
                             tmp_path = tf.name
 
@@ -523,7 +564,7 @@ def generate_image_ideas():
                                     up = requests.post(
                                         f"https://api.miro.com/v2/boards/{board_id}/images",
                                         headers=miro_headers,
-                                        files={'resource': ('image.png', fh, 'image/png')},
+                                        files={'resource': ('image.jpg', fh, 'image/jpeg')},
                                         data={
                                             "position": json.dumps(cur_pos),
                                             "geometry": json.dumps(geo),

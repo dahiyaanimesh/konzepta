@@ -4,3 +4,4 @@ openai
 requests
 python-dotenv
 gunicorn
+Pillow==10.1.0
