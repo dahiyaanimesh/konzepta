@@ -414,6 +414,7 @@ export default function GenerateIdeasButton() {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
+            
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {truncatedContent}
               </span>
