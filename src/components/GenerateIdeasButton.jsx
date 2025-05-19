@@ -283,24 +283,24 @@ export default function GenerateIdeasButton() {
                 
                 if (parent && typeof parent.x === 'number' && isFinite(parent.x)) {
                   // Add sticky to the board next to the frame/table instead of inside it
-                  x = parent.x + parent.geometry.width/2 + 200; // Place right of the frame
+                  x = parent.x + 50; // Place closer to the frame
                   y = parent.y; // Same vertical position as frame
                   console.log('📐 Positioning next to parent frame/table:', { x, y });
                 } else {
                   // If we can't get parent info, fall back to viewport
-                  x = validSticky.x + 200; // Try direct coordinates first
+                  x = validSticky.x + 100; // Reduced from 200px to 100px
                   y = validSticky.y;
                 }
               } catch (frameErr) {
                 console.warn('Could not get parent frame info:', frameErr);
                 // Fallback to direct position + offset
-                x = validSticky.x + 200;
+                x = validSticky.x + 100; // Reduced from 200px to 100px
                 y = validSticky.y;
               }
             } else {
               // Normal case - sticky is directly on board
-              x = validSticky.x + 200; // Add 200px to X to place it to the right
-              y = validSticky.y;       // Keep the same Y coordinate
+              x = validSticky.x + 100; // Reduced from 200px to 100px
+              y = validSticky.y; // Keep the same Y coordinate
             }
             
             // Copy style and geometry regardless of parent
@@ -313,7 +313,7 @@ export default function GenerateIdeasButton() {
           } catch (err) {
             console.warn('⚠️ Could not get reference sticky details:', err);
             // Fallback to direct coordinates if we can't get full details
-            x = validSticky.x + 200;
+            x = validSticky.x + 100;
             y = validSticky.y;
           }
         } else {
@@ -350,15 +350,8 @@ export default function GenerateIdeasButton() {
       const newSticky = await miro.board.createStickyNote(payload);
       console.log('✅ Created sticky note:', newSticky);
       
-      // Make the new sticky visible
+      // Make the new sticky visible by selecting it (but don't zoom)
       await miro.board.select({id: newSticky.id});
-      
-      // Try to zoom/pan to make it visible
-      try {
-        await miro.board.viewport.zoomTo(newSticky);
-      } catch (zoomErr) {
-        console.warn('⚠️ Could not zoom to new sticky:', zoomErr);
-      }
     } catch (err) {
       console.error('❌ Failed to create sticky note:', err);
     }
