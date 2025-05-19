@@ -2,7 +2,7 @@
 
 A Miro app integration that helps UX designers and teams generate ideas using AI. The app leverages OpenAI's APIs to generate text suggestions and visual sketches based on sticky notes content.
 
-![AI Ideation Assistant Screenshot](https://example.com/screenshot.png) <!-- Replace with actual screenshot URL when available -->
+![AI Ideation Assistant Screenshot](https://github.com/dahiyaanimesh/konzepta/blob/5f8b1f5c6aa5a90f66bd5e40c6c95460a4a15b27/src/konzepta.png) <!-- Replace with actual screenshot URL when available -->
 
 ## Features
 
