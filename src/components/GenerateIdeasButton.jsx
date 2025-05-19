@@ -237,97 +237,128 @@ export default function GenerateIdeasButton() {
       }
     }
   
+    // Default position - will be updated if selection exists
     let x = 0;
-    let y = 0;
+    let y = 0; 
     let style = { shape: 'square', fillColor: 'yellow' };
     let geometry = null;
-    let positionDetermined = false;
-  
+    
     try {
+      // First get viewport as fallback
+      const viewport = await miro.board.viewport.get();
+      x = viewport.x + viewport.width / 2;
+      y = viewport.y + viewport.height / 2;
+      
+      // Get selection directly from Miro
       const selection = await miro.board.getSelection();
+      console.log('📋 Selection:', selection);
+      
+      // Filter for sticky notes
       const stickies = selection.filter(item => item.type === 'sticky_note');
-  
+      
       if (stickies.length > 0) {
-        // Filter out stickies with invalid coordinates
-        const validStickies = stickies.filter(s => {
-          return typeof s.x === 'number' && !isNaN(s.x) && isFinite(s.x) &&
-                 typeof s.y === 'number' && !isNaN(s.y) && isFinite(s.y);
-        });
-  
-        if (validStickies.length > 0) {
-          // Calculate average position from valid stickies only
-          const totalX = validStickies.reduce((sum, s) => sum + s.x, 0);
-          const totalY = validStickies.reduce((sum, s) => sum + s.y, 0);
-          x = totalX / validStickies.length + 150;
-          y = totalY / validStickies.length;
-          positionDetermined = true;
+        // Get the first sticky with valid coordinates
+        const validSticky = stickies.find(s => 
+          typeof s.x === 'number' && isFinite(s.x) && 
+          typeof s.y === 'number' && isFinite(s.y)
+        );
+        
+        if (validSticky) {
+          // Directly use its position with explicit offset to the right
+          console.log('📍 Using sticky position:', { x: validSticky.x, y: validSticky.y });
           
-          // Get a reference for style/geometry from a valid sticky
-          const ref = await miro.board.getById(validStickies[0].id);
-          if (ref && ref.style) {
-            style = { 
-              ...ref.style,
-              fillColor: 'yellow'
-            };
-          }
-  
-          // Copy the complete geometry if available
-          if (ref && ref.geometry) {
-            geometry = { ...ref.geometry };
-            console.log('✅ Using reference sticky geometry:', geometry);
+          // Get full sticky details to handle frames and copy style/geometry
+          try {
+            const refSticky = await miro.board.getById(validSticky.id);
+            console.log('Full sticky details:', refSticky);
+            
+            // Check if sticky is on a frame by examining parentId
+            if (refSticky.parentId) {
+              console.log('Sticky has parent (frame/table):', refSticky.parentId);
+              
+              try {
+                // Get the parent frame/table
+                const parent = await miro.board.getById(refSticky.parentId);
+                console.log('Parent element:', parent);
+                
+                if (parent && typeof parent.x === 'number' && isFinite(parent.x)) {
+                  // Add sticky to the board next to the frame/table instead of inside it
+                  x = parent.x + parent.geometry.width/2 + 200; // Place right of the frame
+                  y = parent.y; // Same vertical position as frame
+                  console.log('📐 Positioning next to parent frame/table:', { x, y });
+                } else {
+                  // If we can't get parent info, fall back to viewport
+                  x = validSticky.x + 200; // Try direct coordinates first
+                  y = validSticky.y;
+                }
+              } catch (frameErr) {
+                console.warn('Could not get parent frame info:', frameErr);
+                // Fallback to direct position + offset
+                x = validSticky.x + 200;
+                y = validSticky.y;
+              }
+            } else {
+              // Normal case - sticky is directly on board
+              x = validSticky.x + 200; // Add 200px to X to place it to the right
+              y = validSticky.y;       // Keep the same Y coordinate
+            }
+            
+            // Copy style and geometry regardless of parent
+            if (refSticky && refSticky.style) {
+              style = { ...refSticky.style, fillColor: 'yellow' };
+            }
+            if (refSticky && refSticky.geometry) {
+              geometry = { ...refSticky.geometry };
+            }
+          } catch (err) {
+            console.warn('⚠️ Could not get reference sticky details:', err);
+            // Fallback to direct coordinates if we can't get full details
+            x = validSticky.x + 200;
+            y = validSticky.y;
           }
         } else {
-          // Handle case where all stickies have invalid coordinates
-          console.log('⚠️ All selected stickies have invalid coordinates (possibly in a table)');
+          console.log('⚠️ No valid sticky coordinates found in selection');
         }
-      }
-  
-      // If we couldn't get valid positions from stickies, use the viewport center
-      if (!positionDetermined) {
-        const viewport = await miro.board.viewport.get();
-        x = viewport.x + viewport.width / 2;
-        y = viewport.y + viewport.height / 2;
-        console.log('ℹ️ Using viewport center at', { x, y });
+      } else {
+        console.log('ℹ️ No sticky notes in selection, using viewport center');
       }
     } catch (err) {
-      console.error('⚠️ Failed to get selection or viewport:', err);
-      
-      // Final fallback if everything fails
-      try {
-        const viewport = await miro.board.viewport.get();
-        x = viewport.x + viewport.width / 2;
-        y = viewport.y + viewport.height / 2;
-        console.log('🔄 Fallback to viewport center after error:', { x, y });
-      } catch (viewportErr) {
-        // Last resort fallback
-        x = 0;
-        y = 0;
-        console.error('⛔ Using origin (0,0) as last resort after failing to get viewport');
-      }
+      console.error('❌ Error getting selection or viewport:', err);
     }
   
+    // Final validation to ensure we never have invalid coordinates
+    if (!isFinite(x) || !isFinite(y)) {
+      console.warn('⚠️ Invalid coordinates detected, resetting to (0,0)');
+      x = 0;
+      y = 0;
+    }
+    
     try {
-      // Final validation to ensure we never have invalid coordinates
-      if (!isFinite(x) || !isFinite(y)) {
-        console.warn('⚠️ Invalid coordinates detected, resetting to (0,0)');
-        x = 0;
-        y = 0;
-      }
-      
       const payload = {
         content: contentToAdd,
-        x,
-        y,
-        style,
-        ...(geometry ? { geometry } : {})
+        x: x,
+        y: y,
+        style: style
       };
-  
+      
+      // Only add geometry if it exists and is valid
+      if (geometry && typeof geometry.width === 'number' && isFinite(geometry.width)) {
+        payload.geometry = geometry;
+      }
+
       console.log('📤 Creating sticky with payload:', payload);
       const newSticky = await miro.board.createStickyNote(payload);
       console.log('✅ Created sticky note:', newSticky);
       
-      // Make the new sticky visible by selecting it
+      // Make the new sticky visible
       await miro.board.select({id: newSticky.id});
+      
+      // Try to zoom/pan to make it visible
+      try {
+        await miro.board.viewport.zoomTo(newSticky);
+      } catch (zoomErr) {
+        console.warn('⚠️ Could not zoom to new sticky:', zoomErr);
+      }
     } catch (err) {
       console.error('❌ Failed to create sticky note:', err);
     }
@@ -452,7 +483,7 @@ export default function GenerateIdeasButton() {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
-            
+
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {truncatedContent}
               </span>
