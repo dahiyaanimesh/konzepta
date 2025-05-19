@@ -418,73 +418,74 @@ def generate_text2image_sketches():
 
 @app.route('/generate-image-ideas', methods=['POST'])
 def generate_image_ideas():
-    """Generate 3 image ideas for each prompt (free text or selected shapes)
-       and post them side‑by‑side on the board."""
-    t0 = time.time()
+    """Generate three GPT‑image‑1 sketches per prompt and add them to the board
+       — placing them next to the user's selection when possible."""
+    start_time = time.time()
 
     try:
-        # -------- request & sanity checks --------
         data = request.get_json(force=True) or {}
         sel_ids = data.get("selectedShapeIds", [])
-        free_txt = (data.get("content") or "").strip()
+        free_text = (data.get("content") or "").strip()
         board_id = data.get("boardId") or DEFAULT_BOARD_ID
         if not board_id:
-            return jsonify(error="No board ID provided"), 400
-        if not sel_ids and not free_txt:
-            return jsonify(error="No content or shape IDs provided"), 400
+            return jsonify(error="No board ID"), 400
+        if not sel_ids and not free_text:
+            return jsonify(error="No content or shape IDs"), 400
 
-        # -------- placement & geometry --------
-        pos = data.get("positionData") or {
+        # ---------- desired placement & geometry ----------
+        position_data = data.get("positionData") or {
             "x": 0, "y": 0, "origin": "center", "relativeTo": "canvas_center"
         }
-        geo = data.get("geometryData") or {"width": 600, "height": 600}
-        geo.setdefault("height", geo["width"])  # keeping it square.
-        offset = geo["width"] + 50  # maintaining a gap between images.
+        geometry = data.get("geometryData") or {"width": 600, "height": 600}
+        geometry.setdefault("height", geometry["width"])  # keep square
 
-        # -------- gather prompt strings --------
+        # ---------- collect prompt strings ----------
         prompts = []
         miro_headers = {"Authorization": f"Bearer {MIRO_TOKEN}",
                         "accept": "application/json"}
 
-        def clean(text: str) -> str:
-            return html.unescape(clean_html(text or "")).strip()
+        def clean_text(raw: str) -> str:
+            return html.unescape(clean_html(raw or "")).strip()
 
-        # 1. selected shapes
-        for _id in sel_ids:
-            r = requests.get(f"https://api.miro.com/v2/boards/{board_id}/items/{_id}",
-                             headers=miro_headers, timeout=8)
-            if r.status_code != 200:
-                logger.warning("Couldn’t fetch %s (%s)", _id, r.status_code)
-                continue
-            item = r.json()
-            if item.get("type") not in {"sticky_note", "shape", "text"}:
-                continue
-            # try a few fields in order
-            candidates = [
-                item.get("data", {}).get("content"),
-                item.get("data", {}).get("plainText"),
-                item.get("text"),
-                item.get("title")
-            ]
-            extracted = next((clean(c) for c in candidates if clean(c)), "")
-            if extracted:
-                prompts.append(extracted)
+        if sel_ids:
+            # fetching each selected object individually — reliable even for "just‑created" items.
+            for _id in sel_ids:
+                r = requests.get(
+                    f"https://api.miro.com/v2/boards/{board_id}/items/{_id}",
+                    headers=miro_headers, timeout=8
+                )
+                if r.status_code != 200:
+                    continue
+                item = r.json()
 
-        # 2. free‑form text from request body.
-        if free_txt:
-            prompts.append(free_txt)
+                if item.get("type") not in {"sticky_note", "shape", "text"}:
+                    continue
+
+                candidates = [
+                    item.get("data", {}).get("content"),
+                    item.get("data", {}).get("plainText"),
+                    item.get("text"),
+                    item.get("title")
+                ]
+                extracted = next((clean_text(c) for c in candidates if clean_text(c)), "")
+                if extracted:
+                    prompts.append(extracted)
+
+        # free‑form text from the request body.
+        if free_text:
+            prompts.append(free_text)
 
         if not prompts:
             return jsonify(status="no_valid_shapes_found"), 200
 
-        # -------- generate & upload --------
+        # ---------- generate & upload ----------
         client = get_openai_client()
         images_added = 0
 
-        for prompt in prompts:
-            full_prompt = (
+        for raw_prompt in prompts:
+            prompt_text = (
                 f"An image illustrating the core ideas of a UX brainstorming session. "
-                f"Theme: '{prompt}'. "
+                f"Theme: '{raw_prompt}'. "
                 f"Create a clean, high-quality, professional image that visually represents the theme. "
                 f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
                 f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple."
@@ -493,47 +494,38 @@ def generate_image_ideas():
 
             rsp = client.images.generate(
                 model=IMAGE_MODEL,
-                prompt=full_prompt,
+                prompt=prompt_text,
                 size=IMAGE_SIZE,
-                n=3,
-                **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
+                n=3
             )
 
+            # place the trio side‑by‑side, 50 px apart
+            offset = geometry["width"] + 50
             for idx, img in enumerate(rsp.data, 1):
-                # ---- decode regardless of response format ----
-                if getattr(img, "b64_json", None):
-                    img_bytes = base64.b64decode(img.b64_json)
-                elif getattr(img, "url", None):
-                    dl = requests.get(img.url, timeout=10)
-                    if dl.status_code != 200:
-                        logger.warning("Couldn’t download image %s: %s", idx, dl.status_code)
-                        continue
-                    img_bytes = dl.content
-                else:
-                    logger.warning("No image payload returned for prompt %s", prompt[:30])
-                    continue
-
-                # ---- temporary file for upload ----
+                img_bytes = base64.b64decode(img.b64_json)
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
                     tf.write(img_bytes)
                     tmp_path = tf.name
 
-                cur_pos = {**pos, "x": pos["x"] + (idx - 1) * offset}
+                pos = {
+                    "x": position_data["x"] + (idx - 1) * offset,
+                    "y": position_data["y"],
+                    "origin": position_data.get("origin", "center")
+                }
 
-                with open(tmp_path, "rb") as fh:
+                with open(tmp_path, "rb") as img_file:
                     up = requests.post(
                         f"https://api.miro.com/v2/boards/{board_id}/images",
                         headers=miro_headers,
-                        files={'resource': ('image.png', fh, 'image/png')},
+                        files={'resource': ('image.png', img_file, 'image/png')},
                         data={
-                            "position": json.dumps(cur_pos),
-                            "geometry": json.dumps(geo),
-                            "data": json.dumps({"title": f"{prompt[:40]} – idea{idx}"})
+                            "position": json.dumps(pos),
+                            "geometry": json.dumps(geometry),
+                            "data": json.dumps({"title": f"{raw_prompt[:40]} – idea{idx}"})
                         },
                         timeout=15
                     )
                 os.unlink(tmp_path)
-
                 if up.status_code in (200, 201, 202):
                     images_added += 1
                 else:
@@ -542,7 +534,7 @@ def generate_image_ideas():
         return jsonify(
             status="success",
             images_added=images_added,
-            processing_time_seconds=round(time.time() - t0, 2)
+            processing_time_seconds=round(time.time() - start_time, 2)
         )
 
     except Exception as e:
