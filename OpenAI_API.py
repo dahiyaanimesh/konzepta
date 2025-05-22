@@ -211,18 +211,18 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-            Idea generation task:
+            Generate one sentence idea based on the sticky note and additional context below.
             
-            Sticky Note: "{clean_text}"
-            Additional Context: "{custom_prompt}"
-            
-            INSTRUCTIONS:
+            Instructions:
             - Output exactly ONE sentence.
             - It MUST start with 'Idea 1:' and nothing else.
-            - 20 words max.
+            - Maximum 20 words.
             - No explanations, no summaries, no markdown, no extra lines.
             
-            Now generate your response.
+            Sticky Note: "{clean_text}"
+            Context: "{custom_prompt}"
+            
+            Now respond:
             """.strip()
         
         else:
