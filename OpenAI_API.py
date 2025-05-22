@@ -210,23 +210,28 @@ def generate_ideas():
             """.strip()
             
         if custom_prompt:
+        
             prompt = f"""
             {base_prompt}
             
             ---
-            The user has provided additional context to inform your ideation, but you must still follow the exact output format and instructions above.
-            
-            Additional context (do not change output structure):
+            The user has provided the following additional context (do not change format):
             "{custom_prompt}"
             
-            Reminder:
-            - Output exactly 3 ideas.
-            - Each idea must begin with "Idea X:" (e.g., Idea 1:)
-            - No markdown, no bullet points, no quotation marks.
-            - Each idea must be 10 words or fewer.
+            You must continue following the instructions above. DO NOT:
+            - Add introductions, explanations, or markdown
+            - Use bullet points or paragraphs
+            - Repeat the sticky note
+            - Say things like “Here are some ways…”
+            
+            Only output 3 ideas formatted like:
+            
+            Idea 1: [up to 10 words]
+            Idea 2: ...
+            Idea 3: ...
             """.strip()
         else:
-            prompt = base_prompt
+            prompt = base_prompt 
 
         logger.info(f"Text Generation - Prompt (length: {len(prompt)})")
 
