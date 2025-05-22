@@ -183,10 +183,7 @@ def generate_ideas():
 
         clean_text = strip_html(content)
 
-        if custom_prompt:
-            prompt = f"{custom_prompt}\n\nSticky Note: \"{clean_text}\""
-        else:
-            prompt = f"""
+        base_prompt = f"""
        
             You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
  
@@ -211,6 +208,11 @@ def generate_ideas():
             Idea 3: ...
            
             """.strip()
+            
+        if custom_prompt:
+            prompt = f"{base_prompt}\n\nAdditional guidance: {custom_prompt}"
+        else:
+            prompt = base_prompt
 
         logger.info(f"Text Generation - Prompt (length: {len(prompt)})")
 
