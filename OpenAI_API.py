@@ -210,28 +210,30 @@ def generate_ideas():
             """.strip()
             
         if custom_prompt:
-        
             prompt = f"""
-            {base_prompt}
-            
-            ---
-            The user has provided the following additional context (do not change format):
-            "{custom_prompt}"
-            
-            You must continue following the instructions above. DO NOT:
-            - Add introductions, explanations, or markdown
-            - Use bullet points or paragraphs
-            - Repeat the sticky note
-            - Say things like “Here are some ways…”
-            
-            Only output 3 ideas formatted like:
-            
-            Idea 1: [up to 10 words]
-            Idea 2: ...
-            Idea 3: ...
-            """.strip()
+                        {base_prompt}
+                        
+                        ---
+                        The user has provided additional context below to inspire your thinking. Do NOT change the output format.
+                        
+                        Additional context: "{custom_prompt}"
+                        
+                        You must still follow the original instructions exactly:
+                        - No introductions, markdown, bullet points, or explanations
+                        - Each idea must be 10 words or fewer
+                
+                        Format your response like this (no markdown, asterisks, or hashes):
+                             
+                        Idea 1: ...
+                             
+                        Idea 2: ...
+                             
+                        Idea 3: ...
+        """.strip()
+        
         else:
-            prompt = base_prompt 
+            prompt = base_prompt
+
 
         logger.info(f"Text Generation - Prompt (length: {len(prompt)})")
 
