@@ -218,18 +218,14 @@ def generate_ideas():
                 "{custom_prompt}"
                 
                 Instructions:
+                - Start your response immediately with exactly "Idea 1:" — no intro, no greetings.
+                - Response must be a single sentence, maximum 20 words.
+                - No explanations, bullet points, markdown, or formatting.
+                - No extra text before or after the response.
+                - Inspire exploration; do not fully answer the question.
                 
-                - Output ONLY one short response starting immediately with the exact words "Idea 1:".
-                - The response must be exactly ONE sentence, no more than 20 words.
-                - Do NOT provide explanations, summaries, or multiple paragraphs.
-                - Do NOT include introductions (e.g. "Certainly! Here’s one more thing you could add"), conclusions, bullet points, or any formatting.
-                - Do NOT add any text before "Idea 1:" or after the response.
-                - Your response should inspire thought or exploration, not answer fully.
-                
-                Format your response like this (no markdown, asterisks, or hashes):
-             
-                Idea 1: 20 words max responding to custom prompt with context of sticky note content
-
+                Example output:
+                Idea 1: Integrate charging availability with popular maps apps for easier real-time planning.
             """.strip()
         
         else:
