@@ -179,7 +179,14 @@ export default function GenerateIdeasButton() {
       console.log('AI response received:', data);
       if (data.suggestions) {
         const raw = data.suggestions;
-        const ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
+        
+        // Try to extract numbered ideas first
+        let ideas = raw.match(/^Idea\s*\d+[:：].*$/gm);
+        
+        // If nothing matched, fallback to splitting on new lines
+        if (!ideas || ideas.length === 0) {
+          ideas = raw.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        }
 
         setSuggestions(ideas);
       } else {
