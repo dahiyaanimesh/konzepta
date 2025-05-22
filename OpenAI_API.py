@@ -211,25 +211,21 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-                        {base_prompt}
-                        
-                        ---
-                        The user has provided additional context below to inspire your thinking. Do NOT change the output format.
-                        
-                        Additional context: "{custom_prompt}"
-                        
-                        You must still follow the original instructions exactly:
-                        - No introductions, markdown, bullet points, or explanations
-                        - Each idea must be 10 words or fewer
+                {base_prompt}
                 
-                        Format your response like this (no markdown, asterisks, or hashes):
-                             
-                        Idea 1: ...
-                             
-                        Idea 2: ...
-                             
-                        Idea 3: ...
-        """.strip()
+                ---
+                Additional context: "{custom_prompt}"
+                
+                Strictly produce exactly 3 ideas, each starting with "Idea 1:", "Idea 2:", "Idea 3:", followed by a space and your 10-word maximum idea.
+                Do NOT add any introductions, explanations, markdown, bullet points, or extra text.
+                Each idea must be on its own line only.
+                
+                Format your response exactly like this (no markdown or asterisks):
+                
+                Idea 1: ...
+                Idea 2: ...
+                Idea 3: ...
+            """.strip()
         
         else:
             prompt = base_prompt
