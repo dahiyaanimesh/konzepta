@@ -211,22 +211,31 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-                Sticky note:
-                "{clean_text}"
+                You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
+     
+                Based on the sticky note and the custom prompt input by the designer during the ideation session below, suggest 3 new sticky notes that each:
+     
+                - Reframe or expand the original thought to open new directions.
+     
+                - Use different thinking lenses, including but not limited to: technical, sustainability, data-driven, time-sensitive, accessibility, risk-aware, regulatory, scalability, financial, commercial, user-centric, innovative, and visionary, to explore diverse perspectives.
+     
+                - Pose a question, challenge an assumption, or introduce a fresh lens—not a defined concept.
+     
+                Avoid naming tools, services, features, or systems. Do not propose fully-formed solutions. Focus on sparking curiosity, discussion, and creative momentum. Use clear, simple language understandable to both designers and clients. Limit each sticky note to 10 words or fewer.
+               
+                Sticky Note: "{clean_text}"
+                    
+                Custom Prompt: "{custom_prompt}"
+                 
+                Format your response like this (no markdown, asterisks, or hashes):
+                 
+                Idea 1: 10 words max provoking further exploration or variation of the idea.
+                 
+                Idea 2: ...
+                 
+                Idea 3: ...
                 
-                Additional context or question:
-                "{custom_prompt}"
-                
-                Instructions:
-                - Start your response immediately with exactly "Idea 1:" — no intro, no greetings.
-                - Response must be a single sentence, maximum 20 words.
-                - No explanations, bullet points, markdown, or formatting.
-                - No extra text before or after the response.
-                - Inspire exploration; do not fully answer the question.
-                
-                Example output:
-                Idea 1: Integrate charging availability with popular maps apps for easier real-time planning.
-            """.strip()
+                """.strip()
         
         else:
             prompt = base_prompt
