@@ -213,11 +213,11 @@ export default function GenerateIdeasButton() {
     let contentToAdd = text;
     
     // Try to extract the concept based on different patterns
-    const conceptTitlePattern = /Concept\s*\d+[:：]\s*(.+?)(?:\n|$)/i;
+    const conceptTitlePattern = /Idea\s*\d+[:：]\s*(.+?)(?:\n|$)/i;
     const titleMatch = text.match(conceptTitlePattern);
     
     // Look for the description that typically follows after "- Concept:" 
-    const conceptDescPattern = /-\s*Concept[:：]?\s*(.+?)(?:\n|$)/i;
+    const conceptDescPattern = /-\s*Idea[:：]?\s*(.+?)(?:\n|$)/i;
     const descMatch = text.match(conceptDescPattern);
     
     if (descMatch && descMatch[1]) {
