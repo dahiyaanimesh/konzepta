@@ -212,28 +212,22 @@ def generate_ideas():
         if custom_prompt:
             prompt = f"""
                 Based on the sticky note:
-                
+
                 "{clean_text}"
                 
-                And considering the additional context:
+                And considering the additional context (if any):
                 
                 "{custom_prompt}"
                 
-                Generate exactly 3 separate responses related to the above.
+                Generate exactly 3 separate responses inspired by the above.
                 
-                **Important instructions:**  
-                - Your output must begin immediately with "Idea 1:" — no introductions or extra text.  
-                - Provide exactly 3 responses, labeled "Idea 1:", "Idea 2:", and "Idea 3:" in order.  
-                - Each response should be on its own line.  
+                IMPORTANT INSTRUCTIONS:  
+                - Your output must start immediately with "Idea 1:" — no introductions or extra text before it.  
+                - Provide exactly 3 responses labeled "Idea 1:", "Idea 2:", and "Idea 3:" in that order.  
                 - Each response must be 20 words or fewer.  
-                - Do NOT include markdown, bullet points, numbering, or any formatting besides these labels.  
+                - Each response should be on its own line.  
+                - Do NOT include any introductions, explanations, paragraphs, bullet points, markdown, or extra formatting.  
                 - Do NOT add any text before "Idea 1:" or after "Idea 3:".
-                
-                Example output:
-                
-                Idea 1: Brief response related to sticky and context, maximum 20 words  
-                Idea 2: Another distinct, concise response or perspective  
-                Idea 3: A third unique, short response or angle
                 """.strip()
         
         else:
