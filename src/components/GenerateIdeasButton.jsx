@@ -179,8 +179,7 @@ export default function GenerateIdeasButton() {
       console.log('AI response received:', data);
       if (data.suggestions) {
         const raw = data.suggestions;
-        const ideas = raw
-          .match(/Idea\s*\d+[:：]\s?.+/gmi) || [];
+        const ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
 
         setSuggestions(ideas);
       } else {
