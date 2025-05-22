@@ -179,7 +179,17 @@ export default function GenerateIdeasButton() {
       console.log('AI response received:', data);
       if (data.suggestions) {
         const raw = data.suggestions;
-        const ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
+        let ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
+        
+        // Fallback: If nothing matched but there's some valid text, extract best sentence
+        if (ideas.length === 0 && raw.trim()) {
+          const sentenceMatch = raw.match(/([A-Z][^.!?]*[.!?])/g);
+          if (sentenceMatch && sentenceMatch.length > 0) {
+            ideas = [`Idea 1: ${sentenceMatch[0].trim()}`]; // Just grab the first full sentence
+          } else {
+            ideas = [raw.trim()]; // If still nothing, fallback to raw
+          }
+        }
         
         setSuggestions(ideas);
       } else {
