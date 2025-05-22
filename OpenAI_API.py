@@ -480,7 +480,7 @@ def generate_image_ideas():
                     f"Theme: '{prompt}'. "
                     f"Create a clean, high-quality, professional image that visually represents the theme. "
                     f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
-                    f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple."
+                    f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple. There should be no text in the image. The image should not be very detailed, it should be simple."
                     f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
                 )
 
