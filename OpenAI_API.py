@@ -491,7 +491,7 @@ def generate_image_ideas():
         for prompt in prompts:
             try:
                 full_prompt = (
-                    f"Create a clean, high-quality image that visually represents this UX pain point: '{prompt}'. "
+                    f"Create a clean, high-quality image that visually represents this theme: '{prompt}'. "
                     f"Depict a realistic scene or metaphor involving people, environments, or objects. "
                     f"The image should have a modern, simple aesthetic with minimal visual clutter. "
                     f"There should be absolutely no text, labels, signs, symbols, characters, or written language in the image. "
