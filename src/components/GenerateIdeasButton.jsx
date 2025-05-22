@@ -208,33 +208,18 @@ export default function GenerateIdeasButton() {
 
   const addToMiroBoard = async (text) => {
     console.log('⏳ Starting to add sticky with content:', text);
-  
-    // Extract both the concept title and description
-    let contentToAdd = text;
     
-    // Try to extract the concept based on different patterns
-    const conceptTitlePattern = /Idea\s*\d+[:：]\s*(.+?)(?:\n|$)/i;
-    const titleMatch = text.match(conceptTitlePattern);
+    // Extract the short idea from format: "Idea X: text"
+    let contentToAdd = text.trim();
+    const ideaPattern = /Idea\s*\d+[:：]\s*(.+)/i;
+    const match = contentToAdd.match(ideaPattern);
     
-    // Look for the description that typically follows after "- Concept:" 
-    const conceptDescPattern = /-\s*Idea[:：]?\s*(.+?)(?:\n|$)/i;
-    const descMatch = text.match(conceptDescPattern);
-    
-    if (descMatch && descMatch[1]) {
-      // Use the description if found
-      contentToAdd = descMatch[1].trim();
-      console.log('✅ Using concept description:', contentToAdd);
-    } else if (titleMatch && titleMatch[1]) {
-      // Fall back to title if no description
-      contentToAdd = titleMatch[1].trim();
-      console.log('ℹ️ Using concept title as fallback:', contentToAdd);
+    if (match && match[1]) {
+      contentToAdd = match[1].trim();
     } else {
-      // If no concept found, use first line as fallback
-      const firstLine = text.split('\n')[0].trim();
-      if (firstLine) {
-        contentToAdd = firstLine;
-        console.log('ℹ️ Using first line as concept:', contentToAdd);
-      }
+      // fallback to first line if parsing fails
+      const firstLine = contentToAdd.split('\n')[0].trim();
+      if (firstLine) contentToAdd = firstLine;
     }
   
     // Default position - will be updated if selection exists
