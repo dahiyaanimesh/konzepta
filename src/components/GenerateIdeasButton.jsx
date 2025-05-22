@@ -181,13 +181,14 @@ export default function GenerateIdeasButton() {
         const raw = data.suggestions;
         let ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
         
-        // Fallback: If nothing matched but there's some valid text, extract best sentence
+        // Fallback: Try to extract a single meaningful sentence
         if (ideas.length === 0 && raw.trim()) {
-          const sentenceMatch = raw.match(/([A-Z][^.!?]*[.!?])/g);
+          // Updated regex to include colon as sentence-ending
+          const sentenceMatch = raw.match(/([A-Z][^.!?:]*[.])/g);
           if (sentenceMatch && sentenceMatch.length > 0) {
-            ideas = [`Idea 1: ${sentenceMatch[0].trim()}`]; // Just grab the first full sentence
+            ideas = [`Idea 1: ${sentenceMatch[0].trim()}`];
           } else {
-            ideas = [raw.trim()]; // If still nothing, fallback to raw
+            ideas = [raw.trim()];
           }
         }
         
