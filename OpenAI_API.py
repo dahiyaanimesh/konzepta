@@ -211,31 +211,34 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-                You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
-     
-                Based on the sticky note and the custom prompt input by the designer during the ideation session below, suggest 3 new sticky notes that each:
-     
-                - Reframe or expand the original thought to open new directions.
-     
-                - Use different thinking lenses, including but not limited to: technical, sustainability, data-driven, time-sensitive, accessibility, risk-aware, regulatory, scalability, financial, commercial, user-centric, innovative, and visionary, to explore diverse perspectives.
-     
-                - Pose a question, challenge an assumption, or introduce a fresh lens—not a defined concept.
-     
-                Avoid naming tools, services, features, or systems. Do not propose fully-formed solutions. Focus on sparking curiosity, discussion, and creative momentum. Use clear, simple language understandable to both designers and clients. Limit each sticky note to 10 words or fewer.
-               
-                Sticky Note: "{clean_text}"
-                    
-                Custom Prompt: "{custom_prompt}"
-                 
-                Format your response like this (no markdown, asterisks, or hashes):
-                 
-                Idea 1: 10 words max provoking further exploration or variation of the idea.
-                 
-                Idea 2: ...
-                 
-                Idea 3: ...
-                
-                """.strip()
+            You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
+            
+            Your task is to produce a **single sticky-note-style insight** that responds to the sticky note and additional designer context below.
+            
+            Sticky Note:
+            "{clean_text}"
+            
+            Additional Context or Question:
+            "{custom_prompt}"
+            
+            INSTRUCTIONS:
+            - Output exactly ONE sentence.
+            - The sentence MUST begin with "Idea 1:" — nothing comes before it.
+            - Your response must be 20 words or fewer (including "Idea 1:").
+            - Do NOT explain, introduce, summarize, or use formatting.
+            - No bullet points, bold text, paragraphs, markdown, or follow-ups.
+            - Do NOT provide multiple ideas — only one.
+            - Do NOT exceed the word limit.
+            
+            Format your response like this:
+            
+            Idea 1: [A single, 20-words-max sentence that provokes thought or expands the topic]
+            
+            Example:
+            Idea 1: What if EV routes prioritized stress-free stops for families with young kids?
+            
+            Now generate your response:
+            """.strip()
         
         else:
             prompt = base_prompt
