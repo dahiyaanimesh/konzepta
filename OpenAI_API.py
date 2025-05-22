@@ -210,7 +210,21 @@ def generate_ideas():
             """.strip()
             
         if custom_prompt:
-            prompt = f"{base_prompt}\n\nAdditional guidance: {custom_prompt}"
+            prompt = f"""
+            {base_prompt}
+            
+            ---
+            The user has provided additional context to inform your ideation, but you must still follow the exact output format and instructions above.
+            
+            Additional context (do not change output structure):
+            "{custom_prompt}"
+            
+            Reminder:
+            - Output exactly 3 ideas.
+            - Each idea must begin with "Idea X:" (e.g., Idea 1:)
+            - No markdown, no bullet points, no quotation marks.
+            - Each idea must be 10 words or fewer.
+            """.strip()
         else:
             prompt = base_prompt
 
