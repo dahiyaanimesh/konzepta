@@ -215,19 +215,18 @@ def generate_ideas():
 
                 "{clean_text}"
                 
-                And considering the additional context (if any):
+                And considering the additional context or question (if any):
                 
                 "{custom_prompt}"
                 
-                Generate exactly 3 separate responses inspired by the above.
+                Generate one concise, inspiring response that provokes thought or exploration.
                 
-                IMPORTANT INSTRUCTIONS:  
-                - Your output must start immediately with "Idea 1:" — no introductions or extra text before it.  
-                - Provide exactly 3 responses labeled "Idea 1:", "Idea 2:", and "Idea 3:" in that order.  
-                - Each response must be 20 words or fewer.  
-                - Each response should be on its own line.  
-                - Do NOT include any introductions, explanations, paragraphs, bullet points, markdown, or extra formatting.  
-                - Do NOT add any text before "Idea 1:" or after "Idea 3:".
+                IMPORTANT:  
+                - Begin immediately with "Idea 1:" followed by your response on the same line.  
+                - Response must be 20 words or fewer.  
+                - Do NOT provide a full explanation, direct answer, or summary.  
+                - Avoid introductions, examples, or extra text before or after.  
+                - No bullet points, markdown, or formatting.
                 """.strip()
         
         else:
