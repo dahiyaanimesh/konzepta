@@ -211,7 +211,7 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-            Generate exactly one idea based on the sticky note and context below.
+            Respond to the sticky note and context below.
             
             Respond with:
             - A single sentence only.
