@@ -204,13 +204,11 @@ def generate_ideas():
              
             Format your response like this (no markdown, asterisks, or hashes):
              
-            Concept 1: Title of the Idea
-           
-            - Concept: 10 words max provoking further exploration or variation of the idea.
+            Idea 1: 10 words max provoking further exploration or variation of the idea.
              
-            Concept 2: ...
+            Idea 2: ...
              
-            Concept 3: ...
+            Idea 3: ...
            
             """.strip()
 
