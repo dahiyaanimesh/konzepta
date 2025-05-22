@@ -211,23 +211,25 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-                Based on the sticky note:
-
+                Sticky note:
                 "{clean_text}"
                 
-                And considering the additional context or question (if any):
-                
+                Additional context or question:
                 "{custom_prompt}"
                 
-                Generate one concise, inspiring response that provokes thought or exploration.
+                Instructions:
                 
-                IMPORTANT:  
-                - Begin immediately with "Idea 1:" followed by your response on the same line.  
-                - Response must be 20 words or fewer.  
-                - Do NOT provide a full explanation, direct answer, or summary.  
-                - Avoid introductions, examples, or extra text before or after.  
-                - No bullet points, markdown, or formatting.
-                """.strip()
+                - Output ONLY one short response starting immediately with "Idea 1:".
+                - The response must be exactly ONE sentence, no more than 20 words.
+                - Do NOT provide explanations, summaries, or multiple paragraphs.
+                - Do NOT include introductions, conclusions, bullet points, or any formatting.
+                - Do NOT add any text before "Idea 1:" or after the response.
+                - Your response should inspire thought or exploration, not answer fully.
+                
+                Example output:
+                Idea 1: Integrate fast charger locations into popular apps for real-time availability and easy trip planning.
+
+            """.strip()
         
         else:
             prompt = base_prompt
