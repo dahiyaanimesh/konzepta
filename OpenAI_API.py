@@ -491,14 +491,14 @@ def generate_image_ideas():
         for prompt in prompts:
             try:
                 full_prompt = (
-                    f"An image illustrating the core ideas of a UX brainstorming session. "
-                    f"Theme: '{prompt}'. "
-                    f"Create a clean, high-quality, professional image that visually represents the theme. "
-                    f"Can include people, objects, or environments. Use simple, clear composition with a modern aesthetic. "
-                    f"Minimal visual clutter. No text. Neutral or soft background. It should be a high quality photo-realistic or a graphic. Ensure you are expressing one idea, and that there is one subject in the image, not multiple. 
-                    There should be ABSOLUTELY NO text in the image. The image should not be very detailed, it should be simple and minimalistic."
-                    f"Design should support UX ideation by conveying the concept in an intuitive and visually engaging way."
+                    f"Create a clean, high-quality image that visually represents this UX pain point: '{prompt}'. "
+                    f"Depict a realistic scene or metaphor involving people, environments, or objects. "
+                    f"The image should have a modern, simple aesthetic with minimal visual clutter. "
+                    f"There should be absolutely no text, labels, signs, symbols, characters, or written language in the image. "
+                    f"Do not include UI elements, instructions, buttons, or any form of on-screen text. "
+                    f"The image should have one clear subject and a neutral or soft background."
                 )
+
 
                 # Generate just one image
                 logger.info(f"Generating image for prompt: {prompt[:30]}...")
