@@ -211,33 +211,18 @@ def generate_ideas():
             
         if custom_prompt:
             prompt = f"""
-            You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
+            Idea generation task:
             
-            Your task is to produce a **single sticky-note-style insight** that responds to the sticky note and additional designer context below.
-            
-            Sticky Note:
-            "{clean_text}"
-            
-            Additional Context or Question:
-            "{custom_prompt}"
+            Sticky Note: "{clean_text}"
+            Additional Context: "{custom_prompt}"
             
             INSTRUCTIONS:
             - Output exactly ONE sentence.
-            - The sentence MUST begin with "Idea 1:" — nothing comes before it.
-            - Your response must be 20 words or fewer (including "Idea 1:").
-            - Do NOT explain, introduce, summarize, or use formatting.
-            - No bullet points, bold text, paragraphs, markdown, or follow-ups.
-            - Do NOT provide multiple ideas — only one.
-            - Do NOT exceed the word limit.
+            - It MUST start with 'Idea 1:' and nothing else.
+            - 20 words max.
+            - No explanations, no summaries, no markdown, no extra lines.
             
-            Format your response like this:
-            
-            Idea 1: [A single, 20-words-max sentence that provokes thought or expands the topic]
-            
-            Example:
-            Idea 1: What if EV routes prioritized stress-free stops for families with young kids?
-            
-            Now generate your response:
+            Now generate your response.
             """.strip()
         
         else:
