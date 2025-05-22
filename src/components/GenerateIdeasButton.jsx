@@ -180,9 +180,7 @@ export default function GenerateIdeasButton() {
       if (data.suggestions) {
         const raw = data.suggestions;
         const ideas = raw
-          .split(/(?=^Concept\s*\d+[:：])/gmi)
-          .map(chunk => chunk.trim())
-          .filter(chunk => chunk.length > 0);
+          .match(/Idea\s*\d+[:：]\s?.+/gmi) || [];
 
         setSuggestions(ideas);
       } else {
