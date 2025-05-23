@@ -179,19 +179,25 @@ export default function GenerateIdeasButton() {
       console.log('AI response received:', data);
       if (data.suggestions) {
         const raw = data.suggestions;
-        let ideas = (raw.match(/^Idea\s*\d+[:：].*$/gm) || []).map(i => i.trim());
+        let ideas = [];
+        const ideaMatches = raw.match(/Idea\s*\d[:：][^]*?(?=Idea\s*\d[:：]|$)/g);
+        if (ideaMatches) {
+          ideas = ideaMatches.map(i => {
+            const match = i.match(/Idea\s*\d[:：]\s*(.*)/i);
+            return match ? match[1].trim() : i.trim(); // Strip "Idea X:" from UI output
+          });
+        }
         
         // Fallback: Try to extract a single meaningful sentence
         if (ideas.length === 0 && raw.trim()) {
-          // Updated regex to include colon as sentence-ending
-          const sentenceMatch = raw.match(/([A-Z][^.!?:]*[.])/g);
+          const sentenceMatch = raw.match(/([A-Z][^.!?:]*[.])/);
           if (sentenceMatch && sentenceMatch.length > 0) {
-            ideas = [`Idea 1: ${sentenceMatch[0].trim()}`];
+            ideas = [sentenceMatch[0].trim()];
           } else {
             ideas = [raw.trim()];
           }
         }
-        
+     
         setSuggestions(ideas);
       } else {
         setSuggestions(["No suggestions received."]);
