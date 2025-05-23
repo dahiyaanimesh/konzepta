@@ -214,11 +214,12 @@ def generate_ideas():
             Respond to the sticky note and context below.
             
             Respond with:
-            - A single sentence only.
-            - It must begin with: Idea 1:
+            - Exactly three distinct ideas.
+            - Each idea must be a single sentence.
+            - Each sentence must begin with: Idea 1:, Idea 2:, and Idea 3: respectively.
             - Do NOT add any explanation, follow-up, or extra content.
             - Do NOT use markdown, bullets, or multiple lines.
-            - Your response MUST be only one sentence and nothing more.
+            - Your response MUST be exactly three sentences and nothing more.
             
             Sticky Note: "{clean_text}"
             Context: "{custom_prompt}"
