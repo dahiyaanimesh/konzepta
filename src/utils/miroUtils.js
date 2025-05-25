@@ -173,7 +173,7 @@ export async function createImageOnBoard(url, positionData, geometryData) {
     x: positionData.x,
     y: positionData.y,
     origin: positionData.origin ?? 'center',
-    width: geometryData.width,
+    // width: geometryData.width,
     height: geometryData.height
   });
 }
