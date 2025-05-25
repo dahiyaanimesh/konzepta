@@ -423,7 +423,7 @@ def generate_text2image_sketches():
 @app.route('/generate-image-ideas', methods=['POST'])
 def generate_image_ideas():
     """Generate 3 image ideas for each prompt (free text or selected shapes)
-       and post them side‑by‑side on the board."""
+       and return their URLs for the frontend to place on the board."""
     t0 = time.time()
 
     try:
@@ -485,9 +485,9 @@ def generate_image_ideas():
         if not prompts:
             return jsonify(status="no_valid_shapes_found"), 200
 
-        # -------- generate & upload --------
-        client       = get_openai_client()
-        images_added = 0
+        # -------- generate images and return URLs --------
+        client = get_openai_client()
+        image_urls = []
 
         for prompt in prompts:
             try:
@@ -500,92 +500,31 @@ def generate_image_ideas():
                     f"The image should have one clear subject and a neutral or soft background."
                 )
 
-
-                # Generate just one image
                 logger.info(f"Generating image for prompt: {prompt[:30]}...")
-                
-                # Use the standard size since smaller sizes aren't supported
-                # According to API error, supported values are: '1024x1024', '1024x1536', '1536x1024', and 'auto'
-                
-                # Request a single image
+
                 rsp = client.images.generate(
                     model = IMAGE_MODEL,
                     prompt = full_prompt,
-                    size = "1024x1024",  # Using standard size as smaller isn't supported
+                    size = "1024x1024",
                     n = 1,
                     **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
                 )
-                
+
                 img = rsp.data[0]
-                
-                # ---- decode regardless of response format ----
-                img_bytes = None
-                if getattr(img, "b64_json", None):
-                    img_bytes = base64.b64decode(img.b64_json)
-                elif getattr(img, "url", None):
-                    dl = requests.get(img.url, timeout=10)
-                    if dl.status_code != 200:
-                        logger.warning("Couldn't download image: %s", dl.status_code)
-                        continue
-                    img_bytes = dl.content
+                if getattr(img, "url", None):
+                    image_urls.append(img.url)
+                elif getattr(img, "b64_json", None):
+                    # If only base64 is returned, convert to data URL
+                    image_urls.append(f"data:image/png;base64,{img.b64_json}")
                 else:
-                    logger.warning("No image payload returned for prompt %s", prompt[:30])
-                    continue
-                
-                # ---- temporary file for upload ----
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tf:
-                    tf.write(img_bytes)
-                    tmp_path = tf.name
-
-                # Use center position instead of offset 
-                cur_pos = pos
-
-                # Add retry logic for upload
-                max_retries = 3
-                retry_delay = 2  # seconds
-                upload_success = False
-                
-                for retry in range(max_retries):
-                    try:
-                        with open(tmp_path, "rb") as fh:
-                            up = requests.post(
-                                f"https://api.miro.com/v2/boards/{board_id}/images",
-                                headers=miro_headers,
-                                files={'resource': ('image.png', fh, 'image/png')},
-                                data={
-                                    "position": json.dumps(cur_pos),
-                                    "geometry": json.dumps(geo),
-                                    "data": json.dumps({"title": f"{prompt[:40]} – idea"})
-                                },
-                                timeout=30
-                            )
-                        
-                        if up.status_code in (200, 201, 202):
-                            images_added += 1
-                            upload_success = True
-                            break
-                        else:
-                            logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with status {up.status_code}: {up.text}")
-                            time.sleep(retry_delay)
-                    except requests.exceptions.RequestException as e:
-                        logger.warning(f"Upload attempt {retry+1}/{max_retries} failed with error: {str(e)}")
-                        time.sleep(retry_delay)
-                
-                # Always clean up the temporary file
-                try:
-                    os.unlink(tmp_path)
-                except (OSError, IOError) as e:
-                    logger.warning(f"Failed to remove temporary file {tmp_path}: {str(e)}")
-                
-                if not upload_success:
-                    logger.error(f"Failed to upload image after {max_retries} attempts")
+                    logger.warning(f"No image URL or base64 returned for prompt: {prompt[:30]}")
             except Exception as e:
                 logger.error(f"Error generating image for prompt '{prompt[:30]}': {str(e)}")
                 continue
 
         return jsonify(
             status="success",
-            images_added=images_added,
+            image_urls=image_urls,
             processing_time_seconds=round(time.time() - t0, 2)
         )
 
