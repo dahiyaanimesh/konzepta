@@ -179,11 +179,25 @@ export default function GenerateIdeasButton() {
       console.log('AI response received:', data);
       if (data.suggestions) {
         const raw = data.suggestions;
-        const ideas = raw
-          .split(/(?=^Concept\s*\d+[:：])/gmi)
-          .map(chunk => chunk.trim())
-          .filter(chunk => chunk.length > 0);
-
+        let ideas = [];
+        const ideaMatches = raw.match(/Idea\s*\d[:：][^]*?(?=Idea\s*\d[:：]|$)/g);
+        if (ideaMatches) {
+          ideas = ideaMatches.map(i => {
+            const match = i.match(/Idea\s*\d[:：]\s*(.*)/i);
+            return match ? match[1].trim() : i.trim(); // Strip "Idea X:" from UI output
+          });
+        }
+        
+        // Fallback: Try to extract a single meaningful sentence
+        if (ideas.length === 0 && raw.trim()) {
+          const sentenceMatch = raw.match(/([A-Z][^.!?:]*[.])/);
+          if (sentenceMatch && sentenceMatch.length > 0) {
+            ideas = [sentenceMatch[0].trim()];
+          } else {
+            ideas = [raw.trim()];
+          }
+        }
+     
         setSuggestions(ideas);
       } else {
         setSuggestions(["No suggestions received."]);
@@ -208,88 +222,137 @@ export default function GenerateIdeasButton() {
 
   const addToMiroBoard = async (text) => {
     console.log('⏳ Starting to add sticky with content:', text);
-  
-    // Extract both the concept title and description
-    let contentToAdd = text;
     
-    // Try to extract the concept based on different patterns
-    const conceptTitlePattern = /Concept\s*\d+[:：]\s*(.+?)(?:\n|$)/i;
-    const titleMatch = text.match(conceptTitlePattern);
+    // Extract the short idea from format: "Idea X: text"
+    let contentToAdd = text.trim();
+    const ideaPattern = /Idea\s*\d+[:：]\s*(.+)/i;
+    const match = contentToAdd.match(ideaPattern);
     
-    // Look for the description that typically follows after "- Concept:" 
-    const conceptDescPattern = /-\s*Concept[:：]?\s*(.+?)(?:\n|$)/i;
-    const descMatch = text.match(conceptDescPattern);
-    
-    if (descMatch && descMatch[1]) {
-      // Use the description if found
-      contentToAdd = descMatch[1].trim();
-      console.log('✅ Using concept description:', contentToAdd);
-    } else if (titleMatch && titleMatch[1]) {
-      // Fall back to title if no description
-      contentToAdd = titleMatch[1].trim();
-      console.log('ℹ️ Using concept title as fallback:', contentToAdd);
+    if (match && match[1]) {
+      contentToAdd = match[1].trim();
     } else {
-      // If no concept found, use first line as fallback
-      const firstLine = text.split('\n')[0].trim();
-      if (firstLine) {
-        contentToAdd = firstLine;
-        console.log('ℹ️ Using first line as concept:', contentToAdd);
-      }
+      // fallback to first line if parsing fails
+      const firstLine = contentToAdd.split('\n')[0].trim();
+      if (firstLine) contentToAdd = firstLine;
     }
   
+    // Default position - will be updated if selection exists
     let x = 0;
-    let y = 0;
+    let y = 0; 
     let style = { shape: 'square', fillColor: 'yellow' };
     let geometry = null;
-  
+    
     try {
+      // First get viewport as fallback
+      const viewport = await miro.board.viewport.get();
+      x = viewport.x + viewport.width / 2;
+      y = viewport.y + viewport.height / 2;
+      
+      // Get selection directly from Miro
       const selection = await miro.board.getSelection();
+      console.log('📋 Selection:', selection);
+      
+      // Filter for sticky notes
       const stickies = selection.filter(item => item.type === 'sticky_note');
-  
+      
       if (stickies.length > 0) {
-        const totalX = stickies.reduce((sum, s) => sum + s.x, 0);
-        const totalY = stickies.reduce((sum, s) => sum + s.y, 0);
-        x = totalX / stickies.length + 400;
-        y = totalY / stickies.length;
-  
-        const ref = await miro.board.getById(stickies[0].id);
-
-        if (ref.style) {
-          style = { 
-            ...ref.style,
-            fillColor: 'yellow'
-          };
+        // Get the first sticky with valid coordinates
+        const validSticky = stickies.find(s => 
+          typeof s.x === 'number' && isFinite(s.x) && 
+          typeof s.y === 'number' && isFinite(s.y)
+        );
+        
+        if (validSticky) {
+          // Directly use its position with explicit offset to the right
+          console.log('📍 Using sticky position:', { x: validSticky.x, y: validSticky.y });
+          
+          // Get full sticky details to handle frames and copy style/geometry
+          try {
+            const refSticky = await miro.board.getById(validSticky.id);
+            console.log('Full sticky details:', refSticky);
+            
+            // Check if sticky is on a frame by examining parentId
+            if (refSticky.parentId) {
+              console.log('Sticky has parent (frame/table):', refSticky.parentId);
+              
+              try {
+                // Get the parent frame/table
+                const parent = await miro.board.getById(refSticky.parentId);
+                console.log('Parent element:', parent);
+                
+                if (parent && typeof parent.x === 'number' && isFinite(parent.x)) {
+                  // Add sticky to the board next to the frame/table instead of inside it
+                  // Reduced offset to 20px for very close positioning
+                  x = parent.x + 20; // Place very close to the frame
+                  y = parent.y; // Same vertical position as frame
+                  console.log('📐 Positioning next to parent frame/table:', { x, y });
+                } else {
+                  // If we can't get parent info, fall back to viewport
+                  x = validSticky.x + 30; // Very small offset
+                  y = validSticky.y;
+                }
+              } catch (frameErr) {
+                console.warn('Could not get parent frame info:', frameErr);
+                // Fallback to direct position + offset
+                x = validSticky.x + 30; // Very small offset
+                y = validSticky.y;
+              }
+            } else {
+              // Normal case - sticky is directly on board
+              // Very small offset for close positioning
+              x = validSticky.x + 30;
+              y = validSticky.y; // Keep the same Y coordinate
+            }
+            
+            // Copy style and geometry regardless of parent
+            if (refSticky && refSticky.style) {
+              style = { ...refSticky.style, fillColor: 'yellow' };
+            }
+            if (refSticky && refSticky.geometry) {
+              geometry = { ...refSticky.geometry };
+            }
+          } catch (err) {
+            console.warn('⚠️ Could not get reference sticky details:', err);
+            // Fallback to direct coordinates if we can't get full details
+            x = validSticky.x + 30; // Very small offset
+            y = validSticky.y;
+          }
+        } else {
+          console.log('⚠️ No valid sticky coordinates found in selection');
         }
-  
-        // Copy the complete geometry from the reference sticky
-        if (ref.geometry) {
-          geometry = { ...ref.geometry };
-          console.log('✅ Using complete reference sticky geometry:', geometry);
-        }
-  
-        console.log('✅ Using reference sticky geometry:', geometry);
       } else {
-        const viewport = await miro.board.viewport.get();
-        x = viewport.x + viewport.width / 2;
-        y = viewport.y + viewport.height / 2;
-        console.log('ℹ️ No selection, using viewport center at', { x, y });
+        console.log('ℹ️ No sticky notes in selection, using viewport center');
       }
     } catch (err) {
-      console.error('⚠️ Failed to get selection or viewport:', err);
+      console.error('❌ Error getting selection or viewport:', err);
     }
   
+    // Final validation to ensure we never have invalid coordinates
+    if (!isFinite(x) || !isFinite(y)) {
+      console.warn('⚠️ Invalid coordinates detected, resetting to (0,0)');
+      x = 0;
+      y = 0;
+    }
+    
     try {
       const payload = {
         content: contentToAdd,
-        x,
-        y,
-        style,
-        ...(geometry ? { geometry } : {})  // Add the complete geometry if it exists
+        x: x,
+        y: y,
+        style: style
       };
-  
+      
+      // Only add geometry if it exists and is valid
+      if (geometry && typeof geometry.width === 'number' && isFinite(geometry.width)) {
+        payload.geometry = geometry;
+      }
+
       console.log('📤 Creating sticky with payload:', payload);
       const newSticky = await miro.board.createStickyNote(payload);
       console.log('✅ Created sticky note:', newSticky);
+      
+      // Make the new sticky visible by selecting it (but don't zoom)
+      await miro.board.select({id: newSticky.id});
     } catch (err) {
       console.error('❌ Failed to create sticky note:', err);
     }
@@ -414,6 +477,7 @@ export default function GenerateIdeasButton() {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
+
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {truncatedContent}
               </span>
