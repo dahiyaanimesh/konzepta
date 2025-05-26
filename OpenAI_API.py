@@ -489,19 +489,21 @@ def generate_image_ideas():
         client = get_openai_client()
         image_urls = []
 
+        prompt_override = (data.get("prompt") or "").strip()
         for prompt in prompts:
             try:
-                full_prompt = (
-                    f"Create a clean, high-quality image that visually represents this theme: '{prompt}'. "
-                    f"Depict a realistic scene or metaphor involving people, environments, or objects. "
-                    f"The image should have a modern, simple aesthetic with minimal visual clutter. "
-                    f"There should be absolutely no text, labels, signs, symbols, characters, or written language in the image. "
-                    f"Do not include UI elements, instructions, buttons, or any form of on-screen text. "
-                    f"The image should have one clear subject and a neutral or soft background."
-                )
-
-                logger.info(f"Generating image for prompt: {prompt[:30]}...")
-
+                if prompt_override:
+                    full_prompt = prompt_override.replace("{content}", prompt)
+                else:
+                    full_prompt = (
+                        f"Create a clean, high-quality image that visually represents this theme: '{prompt}'. "
+                        f"Depict a realistic scene or metaphor involving people, environments, or objects. "
+                        f"The image should have a modern, simple aesthetic with minimal visual clutter. "
+                        f"There should be absolutely no text, labels, signs, symbols, characters, or written language in the image. "
+                        f"Do not include UI elements, instructions, buttons, or any form of on-screen text. "
+                        f"The image should have one clear subject and a neutral or soft background."
+                    )
+                logger.info(f"Generating image for prompt: {full_prompt[:60]}...")
                 rsp = client.images.generate(
                     model = IMAGE_MODEL,
                     prompt = full_prompt,
@@ -509,15 +511,13 @@ def generate_image_ideas():
                     n = 1,
                     **({"quality": IMAGE_QUALITY} if IMAGE_MODEL == "dall-e-3" else {})
                 )
-
                 img = rsp.data[0]
                 if getattr(img, "url", None):
                     image_urls.append(img.url)
                 elif getattr(img, "b64_json", None):
-                    # If only base64 is returned, convert to data URL
                     image_urls.append(f"data:image/png;base64,{img.b64_json}")
                 else:
-                    logger.warning(f"No image URL or base64 returned for prompt: {prompt[:30]}")
+                    logger.warning(f"No image URL or base64 returned for prompt: {full_prompt[:30]}")
             except Exception as e:
                 logger.error(f"Error generating image for prompt '{prompt[:30]}': {str(e)}")
                 continue
