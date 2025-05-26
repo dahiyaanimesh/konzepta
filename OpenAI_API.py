@@ -493,7 +493,10 @@ def generate_image_ideas():
         for prompt in prompts:
             try:
                 if prompt_override:
-                    full_prompt = prompt_override.replace("{content}", prompt)
+                    if "{content}" in prompt_override:
+                        full_prompt = prompt_override.replace("{content}", prompt)
+                    else:
+                        full_prompt = f"{prompt_override}. Context: {prompt}"
                 else:
                     full_prompt = (
                         f"Create a clean, high-quality image that visually represents this theme: '{prompt}'. "
