@@ -60,7 +60,7 @@ export async function getCurrentBoardId() {
  *      – If the user *also* has a selection we honour that placement.
  *      – Otherwise we centre in the viewport.
  */
-export async function generateImageIdeas(setImageLoading, stickyNoteText) {
+export async function generateImageIdeas(setImageLoading, stickyNoteText, prompt) {
   if (!stickyNoteText?.trim()) {
     console.error('Empty sticky‑note content');
     return;
@@ -86,7 +86,8 @@ export async function generateImageIdeas(setImageLoading, stickyNoteText) {
       content: stickyNoteText,
       boardId,
       positionData: placement.positionData,
-      geometryData: placement.geometryData
+      geometryData: placement.geometryData,
+      prompt: prompt
     };
 
     const res = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
@@ -118,7 +119,7 @@ export async function generateImageIdeas(setImageLoading, stickyNoteText) {
  * 2⃣  Generate images **from a current selection** (sticky / shape / text).
  *     – We compute placement relative to that selection.
  */
-export async function generateImagesFromSelection(setImageLoading) {
+export async function generateImagesFromSelection(setImageLoading, prompt) {
   try {
     setImageLoading?.(true);
 
@@ -139,7 +140,8 @@ export async function generateImagesFromSelection(setImageLoading) {
       selectedShapeIds: itemIds,
       boardId,
       positionData,
-      geometryData
+      geometryData,
+      prompt: prompt
     };
 
     const res = await fetch(`${config.apiBaseUrl}/generate-image-ideas`, {
