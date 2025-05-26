@@ -213,10 +213,10 @@ export default function GenerateIdeasButton() {
   const handleGenerateImages = () => {
     if (!stickyNoteText.trim()) {
       // If no text is available, try to generate from current Miro selection
-      generateImagesFromSelection(setImageLoading);
+      generateImagesFromSelection(setImageLoading, prompt);
     } else {
       // Use text from selected sticky notes
-      generateImageIdeas(setImageLoading, stickyNoteText);
+      generateImageIdeas(setImageLoading, stickyNoteText, prompt);
     }
   };
 
