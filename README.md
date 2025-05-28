@@ -33,7 +33,7 @@ A Miro app integration that helps UX designers and teams generate ideas using AI
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/miro-ai-ideation-assistant.git
+   git clone <repository-url>
    cd miro-ai-ideation-assistant
    ```
 
