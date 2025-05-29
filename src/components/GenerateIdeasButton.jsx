@@ -118,6 +118,13 @@ export default function GenerateIdeasButton() {
     setTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
   };
 
+  const [history, setHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('promptHistory');
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
 
   const handleGenerateIdeas = async () => {
     if (!stickyNoteText.trim()) {
@@ -125,6 +132,7 @@ export default function GenerateIdeasButton() {
     }
     setLoading(true);
     setSuggestions([]);
+  
     const res = await fetch(`${config.apiBaseUrl}/generate-ideas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -134,16 +142,56 @@ export default function GenerateIdeasButton() {
         boardId: await getCurrentBoardId(),
       }),
     });
+  
     const data = await res.json();
-    const matches = data.suggestions?.match(/Idea\s*\d[:\uff1a][^]*?(?=Idea\s*\d[:\uff1a]|$)/g);
+  
+    const suggestionsText = data.suggestions || "";
+  
+    const matches = suggestionsText.match(/Idea\s*\d[:\uff1a][^]*?(?=Idea\s*\d[:\uff1a]|$)/g);
+  
     const ideas = matches
       ? matches.map(i => i.replace(/Idea\s*\d[:\uff1a]/, '').trim())
-      : [data.suggestions?.trim()];
+      : suggestionsText.trim()
+        ? [suggestionsText.trim()]
+        : [];
+  
+    setSuggestions(ideas); // always an array
+  
+    if (prompt.trim() !== "") {
+      const timestamp = new Date().toISOString();
+      const newGeneration = {
+        ideas,
+        timestamp,
+        stickiesUsed: allStickyNotes.map(note => extractContent(note))
+      };
 
-    setSuggestions([...ideas]); // force new array reference to trigger re-render
+  
+      let updatedHistory;
+      const existingGroup = history.find(h => h.prompt === prompt);
+  
+      if (existingGroup) {
+        // Append to existing prompt group
+        const newGroup = {
+          ...existingGroup,
+          generations: [newGeneration, ...existingGroup.generations],
+        };
+        updatedHistory = [
+          newGroup,
+          ...history.filter(h => h.prompt !== prompt),
+        ];
+      } else {
+        // New prompt group
+        updatedHistory = [{ prompt, generations: [newGeneration] }, ...history];
+      }
+  
+      setHistory(updatedHistory);
+      localStorage.setItem('promptHistory', JSON.stringify(updatedHistory));
+    }
+  
     setHasGenerated(true);
     setLoading(false);
   };
+
 
   const handleGenerateImages = () => {
     if (!stickyNoteText.trim()) {
@@ -154,7 +202,7 @@ export default function GenerateIdeasButton() {
   };
 
   const addToMiroBoard = async (text) => {
-    const contentToAdd = `💡 ${text.split('\n')[0].trim()}`;
+    const contentToAdd = `${text.split('\n')[0].trim()}`;
     const viewport = await miro.board.viewport.get();
     const x = viewport.x + viewport.width / 2;
     const y = viewport.y + viewport.height / 2;
@@ -298,34 +346,33 @@ export default function GenerateIdeasButton() {
           })
         )}
 
-  {/* Clear All Button - placed here below the sticky notes */}
-  {allStickyNotes.length > 0 && (
-    <button
-      onClick={() => {
-        setAllStickyNotes([]);
-        setSelectedStickyIds([]);
-        setStickyNoteText('');
-      }}
-      style={{
-        marginTop: '8px',
-        border: 'none',
-        background: 'transparent',
-        color: '#59C3FF',
-        cursor: 'pointer',
-        fontSize: '12px',
-        fontWeight: '600',
-        userSelect: 'none',
-        padding: '0',
-        alignSelf: 'flex-start'
-      }}
-      aria-label="Clear all sticky notes"
-      title="Clear All"
-    >
-      Clear All
-    </button>
-  )}
-</div>
-
+        {/* Clear All Button - placed here below the sticky notes */}
+        {allStickyNotes.length > 0 && (
+          <button
+            onClick={() => {
+              setAllStickyNotes([]);
+              setSelectedStickyIds([]);
+              setStickyNoteText('');
+            }}
+            style={{
+              marginTop: '8px',
+              border: 'none',
+              background: 'transparent',
+              color: '#59C3FF',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0',
+              alignSelf: 'flex-start'
+            }}
+            aria-label="Clear all sticky notes"
+            title="Clear All"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
 
       <div style={{ position: 'relative', marginBottom: '16px', scrollbarWidth: 'thin', scrollbarColor: '#e4e4e7 transparent' }}>
         <textarea
@@ -364,7 +411,6 @@ export default function GenerateIdeasButton() {
         )}
       </div>
 
-      
       <p style={{ fontSize: '14px', marginBottom: '6px', textAlign: 'center', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2E2E2E' }}>Use <strong><em>Sticky Notes</em></strong> to ideate — with or without a custom prompt.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -431,7 +477,7 @@ export default function GenerateIdeasButton() {
         </div>
       )}
 
-      {suggestions.length > 0 && (
+      {Array.isArray(suggestions) && suggestions.length > 0 && (
         <div key={suggestions.length + Date.now()} style={{
           marginTop: '20px',
           display: 'grid',
@@ -475,6 +521,127 @@ export default function GenerateIdeasButton() {
           ))}
         </div>
       )}
+      
+      {Array.isArray(history) && history.length > 0 && (
+        <div style={{ marginTop: '30px' }}>
+          <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
+          {history.map((group, groupIdx) => (
+            <div
+              key={groupIdx}
+              style={{
+                marginBottom: '10px',
+                padding: '10px',
+                border: '1px solid #eee',
+                borderRadius: '8px',
+              }}
+            >
+              <div style={{ marginBottom: '6px' }}>
+                <strong>Prompt:</strong> <em>{group.prompt}</em>
+                <button
+                  onClick={() => setPrompt(group.prompt)}
+                  style={{
+                    marginLeft: '10px',
+                    fontSize: '11px',
+                    border: 'none',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    flex: 1,
+                    backgroundColor: '#F9E000',
+                    color: 'black',
+                    boxShadow: '1px 1px 2px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  ↩ Reuse Prompt
+                </button>
+              </div>
+      
+              {Array.isArray(group.generations) && group.generations.map((gen, genIdx) => (
+                <div
+                  key={genIdx}
+                  style={{
+                    marginTop: '10px',
+                    paddingLeft: '10px',
+                    borderLeft: '2px solid #ccc',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      color: '#888',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px'  }}>
+                      {new Date(gen.timestamp).toLocaleString()}
+                    </div>
+                    
+                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px', fontWeight: 'bold' }}>
+                      Sticky Notes Used:
+                    </div>
+                    <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
+                      {(gen.stickiesUsed || []).map((text, idx) => (
+                        <li key={idx} style={{ fontSize: '11px', marginBottom: '5px', backgroundColor: '#ffffff', border: '1px solid #59C3FF', borderRadius: '10px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#4F4F4F' }}>
+                          {text.length > 100 ? text.slice(0, 100) + '...' : text}
+                        </li>
+                      ))}
+                    </ul>
+
+                  </div>
+                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px' }}>
+                    {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        {idea}
+                        <button
+                          onClick={() => addToMiroBoard(idea)}
+                          style={{
+                            backgroundColor: '#4262FF',
+                            border: 'none',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '8px',
+                            fontWeight: 'bold',
+                            color: '#EDF0FF',
+                            cursor: 'pointer',
+                            boxShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+                            alignSelf: 'flex-end',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          + Add to board
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ))}
+      
+          <button
+            onClick={() => {
+              setHistory([]);
+              localStorage.removeItem('promptHistory');
+            }}
+            style={{
+              marginTop: '2px',
+              border: 'none',
+              background: 'transparent',
+              color: '#59C3FF',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0',
+              alignSelf: 'flex-start',
+              marginBottom: '30px'
+            }}
+          >
+            Clear History
+          </button>
+        </div>
+      )}
+      
     </div>
   );
 }
