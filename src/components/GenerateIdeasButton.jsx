@@ -346,34 +346,33 @@ export default function GenerateIdeasButton() {
           })
         )}
 
-  {/* Clear All Button - placed here below the sticky notes */}
-  {allStickyNotes.length > 0 && (
-    <button
-      onClick={() => {
-        setAllStickyNotes([]);
-        setSelectedStickyIds([]);
-        setStickyNoteText('');
-      }}
-      style={{
-        marginTop: '8px',
-        border: 'none',
-        background: 'transparent',
-        color: '#59C3FF',
-        cursor: 'pointer',
-        fontSize: '12px',
-        fontWeight: '600',
-        userSelect: 'none',
-        padding: '0',
-        alignSelf: 'flex-start'
-      }}
-      aria-label="Clear all sticky notes"
-      title="Clear All"
-    >
-      Clear All
-    </button>
-  )}
-</div>
-
+        {/* Clear All Button - placed here below the sticky notes */}
+        {allStickyNotes.length > 0 && (
+          <button
+            onClick={() => {
+              setAllStickyNotes([]);
+              setSelectedStickyIds([]);
+              setStickyNoteText('');
+            }}
+            style={{
+              marginTop: '8px',
+              border: 'none',
+              background: 'transparent',
+              color: '#59C3FF',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0',
+              alignSelf: 'flex-start'
+            }}
+            aria-label="Clear all sticky notes"
+            title="Clear All"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
 
       <div style={{ position: 'relative', marginBottom: '16px', scrollbarWidth: 'thin', scrollbarColor: '#e4e4e7 transparent' }}>
         <textarea
@@ -412,7 +411,6 @@ export default function GenerateIdeasButton() {
         )}
       </div>
 
-      
       <p style={{ fontSize: '14px', marginBottom: '6px', textAlign: 'center', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2E2E2E' }}>Use <strong><em>Sticky Notes</em></strong> to ideate — with or without a custom prompt.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -526,12 +524,12 @@ export default function GenerateIdeasButton() {
       
       {Array.isArray(history) && history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'center', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
+          <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
           {history.map((group, groupIdx) => (
             <div
               key={groupIdx}
               style={{
-                marginBottom: '20px',
+                marginBottom: '10px',
                 padding: '10px',
                 border: '1px solid #eee',
                 borderRadius: '8px',
@@ -578,10 +576,10 @@ export default function GenerateIdeasButton() {
                       {new Date(gen.timestamp).toLocaleString()}
                     </div>
                     
-                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'center', maxWidth: '300px', marginBottom: '6px', fontWeight: 'bold' }}>
+                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px', fontWeight: 'bold' }}>
                       Sticky Notes Used:
                     </div>
-                    <ul style={{ marginLeft: '16px', marginBottom: '6px' }}>
+                    <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                       {(gen.stickiesUsed || []).map((text, idx) => (
                         <li key={idx} style={{ fontSize: '11px', color: '#7A7A7A', marginBottom: '2px' }}>
                           {text.length > 100 ? text.slice(0, 100) + '...' : text}
@@ -590,7 +588,7 @@ export default function GenerateIdeasButton() {
                     </ul>
 
                   </div>
-                  <ul style={{ marginLeft: '16px' }}>
+                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
                       <li key={ideaIdx} style={{ marginBottom: '4px' }}>
                         {idea}
@@ -623,7 +621,7 @@ export default function GenerateIdeasButton() {
               localStorage.removeItem('promptHistory');
             }}
             style={{
-              marginTop: '8px',
+              marginTop: '2px',
               border: 'none',
               background: 'transparent',
               color: '#59C3FF',
@@ -632,7 +630,8 @@ export default function GenerateIdeasButton() {
               fontWeight: '600',
               userSelect: 'none',
               padding: '0',
-              alignSelf: 'flex-start'
+              alignSelf: 'flex-start',
+              marginBottom: '30px'
             }}
           >
             Clear History
