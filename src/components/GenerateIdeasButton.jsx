@@ -604,7 +604,8 @@ export default function GenerateIdeasButton() {
                             color: '#EDF0FF',
                             cursor: 'pointer',
                             boxShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-                            alignSelf: 'flex-end'
+                            alignSelf: 'flex-end',
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           + Add to board
