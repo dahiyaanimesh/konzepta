@@ -581,7 +581,7 @@ export default function GenerateIdeasButton() {
                     </div>
                     <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                       {(gen.stickiesUsed || []).map((text, idx) => (
-                        <li key={idx} style={{ fontSize: '11px', marginBottom: '2px', backgroundColor: '#ffffff', border: '1px solid #59C3FF', borderRadius: '10px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', wordBreak: 'break-word', color: '#4F4F4F' }}>
+                        <li key={idx} style={{ fontSize: '11px', marginBottom: '5px', backgroundColor: '#ffffff', border: '1px solid #59C3FF', borderRadius: '10px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#4F4F4F' }}>
                           {text.length > 100 ? text.slice(0, 100) + '...' : text}
                         </li>
                       ))}
@@ -590,19 +590,21 @@ export default function GenerateIdeasButton() {
                   </div>
                   <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
-                      <li key={ideaIdx} style={{ marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', wordBreak: 'break-word', color: '#2E2E2E' }}>
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', wordBreak: 'break-word', color: '#2E2E2E' }}>
                         {idea}
                         <button
                           onClick={() => addToMiroBoard(idea)}
                           style={{
-                            marginLeft: '8px',
-                            fontSize: '10px',
                             backgroundColor: '#4262FF',
-                            color: '#fff',
                             border: 'none',
-                            padding: '2px 6px',
+                            padding: '4px 8px',
                             borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            color: '#EDF0FF',
                             cursor: 'pointer',
+                            boxShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+                            alignSelf: 'flex-end'
                           }}
                         >
                           + Add to board
