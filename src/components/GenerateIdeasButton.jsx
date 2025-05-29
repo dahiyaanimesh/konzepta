@@ -599,7 +599,7 @@ export default function GenerateIdeasButton() {
                             border: 'none',
                             padding: '4px 8px',
                             borderRadius: '4px',
-                            fontSize: '10px',
+                            fontSize: '9px',
                             fontWeight: 'bold',
                             color: '#EDF0FF',
                             cursor: 'pointer',
