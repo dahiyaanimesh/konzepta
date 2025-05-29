@@ -154,7 +154,7 @@ export default function GenerateIdeasButton() {
   };
 
   const addToMiroBoard = async (text) => {
-    const contentToAdd = `💡 ${text.split('\n')[0].trim()}`;
+    const contentToAdd = `${text.split('\n')[0].trim()}`;
     const viewport = await miro.board.viewport.get();
     const x = viewport.x + viewport.width / 2;
     const y = viewport.y + viewport.height / 2;
