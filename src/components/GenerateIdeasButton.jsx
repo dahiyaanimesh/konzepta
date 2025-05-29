@@ -146,11 +146,34 @@ export default function GenerateIdeasButton() {
 
     setSuggestions([...ideas]); // force new array reference to trigger re-render
     if (prompt.trim() !== "") {
-      const newEntry = { prompt, ideas, timestamp: new Date().toISOString() };
-      const updatedHistory = [newEntry, ...history.slice(0, 19)];
+      const timestamp = new Date().toISOString();
+      const newGeneration = { ideas, timestamp };
+    
+      let updatedHistory;
+      const existingGroup = history.find(h => h.prompt === prompt);
+    
+      if (existingGroup) {
+        // Append to existing prompt group
+        const newGroup = {
+          ...existingGroup,
+          generations: [newGeneration, ...existingGroup.generations]
+        };
+        updatedHistory = [
+          newGroup,
+          ...history.filter(h => h.prompt !== prompt)
+        ];
+      } else {
+        // New prompt group
+        updatedHistory = [
+          { prompt, generations: [newGeneration] },
+          ...history
+        ];
+      }
+    
       setHistory(updatedHistory);
       localStorage.setItem('promptHistory', JSON.stringify(updatedHistory));
     }
+
     setHasGenerated(true);
     setLoading(false);
   };
@@ -489,53 +512,58 @@ export default function GenerateIdeasButton() {
       {history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
-          <ul style={{ fontSize: '12px', color: '#555', maxHeight: '200px', overflowY: 'auto' }}>
-            {history.map((entry, idx) => (
-              <li key={idx} style={{ marginBottom: '14px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                <strong>{new Date(entry.timestamp).toLocaleString()}:</strong><br/>
-                <em>{entry.prompt || '(No custom prompt)'}</em>
-                <ul style={{ marginLeft: '16px', marginTop: '4px' }}>
-                  {entry.ideas.map((idea, i) => (
-                    <li key={i}>{idea}</li>
-                  ))}
-                </ul>
-                
-                <div style={{ marginTop: '6px', display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={() => {
-                      entry.ideas.forEach(addToMiroBoard);
-                    }}
-                    style={{
-                      fontSize: '11px',
-                      backgroundColor: '#4262FF',
-                      color: 'white',
-                      border: 'none',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ➕ Add ideas to board
-                  </button>
+          {history.map((group, groupIdx) => (
+            <div key={groupIdx} style={{ marginBottom: '20px', padding: '10px', border: '1px solid #eee', borderRadius: '8px' }}>
+              <div style={{ marginBottom: '6px' }}>
+                <strong>Prompt:</strong> <em>{group.prompt}</em>
+                <button
+                  onClick={() => setPrompt(group.prompt)}
+                  style={{
+                    marginLeft: '10px',
+                    fontSize: '11px',
+                    backgroundColor: '#F9E000',
+                    color: '#000',
+                    border: 'none',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ↩️ Reuse Prompt
+                </button>
+              </div>
       
-                  <button
-                    onClick={() => setPrompt(entry.prompt)}
-                    style={{
-                      fontSize: '11px',
-                      backgroundColor: '#F9E000',
-                      color: '#000',
-                      border: 'none',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ↩️ Reuse prompt
-                  </button>
+              {group.generations.map((gen, genIdx) => (
+                <div key={genIdx} style={{ marginTop: '10px', paddingLeft: '10px', borderLeft: '2px solid #ccc' }}>
+                  <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
+                    {new Date(gen.timestamp).toLocaleString()}
+                  </div>
+                  <ul style={{ marginLeft: '16px' }}>
+                    {gen.ideas.map((idea, ideaIdx) => (
+                      <li key={ideaIdx} style={{ marginBottom: '4px' }}>
+                        {idea}
+                        <button
+                          onClick={() => addToMiroBoard(idea)}
+                          style={{
+                            marginLeft: '8px',
+                            fontSize: '10px',
+                            backgroundColor: '#4262FF',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + Add to board
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </div>
+          ))}
       
           <button
             onClick={() => {
