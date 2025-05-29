@@ -119,8 +119,11 @@ export default function GenerateIdeasButton() {
   };
 
   const [history, setHistory] = useState(() => {
-    const stored = localStorage.getItem('promptHistory');
-    return stored ? JSON.parse(stored) : [];
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('promptHistory');
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
   });
 
   const handleGenerateIdeas = async () => {
@@ -516,7 +519,7 @@ export default function GenerateIdeasButton() {
         </div>
       )}
       
-      {history.length > 0 && (
+      {Array.isArray(history) && history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
           {history.map((group, groupIdx) => (
