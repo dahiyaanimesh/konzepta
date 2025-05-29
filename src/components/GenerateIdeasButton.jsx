@@ -526,7 +526,7 @@ export default function GenerateIdeasButton() {
       
       {Array.isArray(history) && history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
+          <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'center', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
           {history.map((group, groupIdx) => (
             <div
               key={groupIdx}
@@ -544,15 +544,17 @@ export default function GenerateIdeasButton() {
                   style={{
                     marginLeft: '10px',
                     fontSize: '11px',
-                    backgroundColor: '#F9E000',
-                    color: '#000',
                     border: 'none',
                     padding: '2px 6px',
                     borderRadius: '4px',
                     cursor: 'pointer',
+                    flex: 1,
+                    backgroundColor: '#F9E000',
+                    color: 'black',
+                    boxShadow: '1px 1px 2px rgba(0,0,0,0.2)',
                   }}
                 >
-                  ↩️ Reuse Prompt
+                  ↩ Reuse Prompt
                 </button>
               </div>
       
@@ -572,16 +574,16 @@ export default function GenerateIdeasButton() {
                       marginBottom: '4px',
                     }}
                   >
-                    <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
+                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px'  }}>
                       {new Date(gen.timestamp).toLocaleString()}
                     </div>
                     
-                    <div style={{ fontSize: '11px', color: '#444', marginBottom: '6px', fontWeight: 'bold' }}>
+                    <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'center', maxWidth: '300px', marginBottom: '6px', fontWeight: 'bold' }}>
                       Sticky Notes Used:
                     </div>
                     <ul style={{ marginLeft: '16px', marginBottom: '6px' }}>
                       {(gen.stickiesUsed || []).map((text, idx) => (
-                        <li key={idx} style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>
+                        <li key={idx} style={{ fontSize: '11px', color: '#7A7A7A', marginBottom: '2px' }}>
                           {text.length > 100 ? text.slice(0, 100) + '...' : text}
                         </li>
                       ))}
@@ -621,13 +623,16 @@ export default function GenerateIdeasButton() {
               localStorage.removeItem('promptHistory');
             }}
             style={{
-              marginTop: '10px',
-              fontSize: '11px',
-              backgroundColor: 'transparent',
+              marginTop: '8px',
               border: 'none',
+              background: 'transparent',
               color: '#59C3FF',
               cursor: 'pointer',
-              textDecoration: 'underline',
+              fontSize: '12px',
+              fontWeight: '600',
+              userSelect: 'none',
+              padding: '0',
+              alignSelf: 'flex-start'
             }}
           >
             Clear History
