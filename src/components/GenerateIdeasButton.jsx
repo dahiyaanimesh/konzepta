@@ -579,7 +579,7 @@ export default function GenerateIdeasButton() {
                     <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px', fontWeight: 'bold' }}>
                       Sticky Notes Used:
                     </div>
-                    <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, paddingRight: '10px' }}>
+                    <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                       {(gen.stickiesUsed || []).map((text, idx) => (
                         <li key={idx} style={{ fontSize: '11px', marginBottom: '5px', backgroundColor: '#ffffff', border: '1px solid #59C3FF', borderRadius: '10px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#4F4F4F' }}>
                           {text.length > 100 ? text.slice(0, 100) + '...' : text}
