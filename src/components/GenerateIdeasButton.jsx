@@ -159,7 +159,12 @@ export default function GenerateIdeasButton() {
   
     if (prompt.trim() !== "") {
       const timestamp = new Date().toISOString();
-      const newGeneration = { ideas, timestamp };
+      const newGeneration = {
+        ideas,
+        timestamp,
+        stickiesUsed: allStickyNotes.map(note => extractContent(note))
+      };
+
   
       let updatedHistory;
       const existingGroup = history.find(h => h.prompt === prompt);
@@ -567,7 +572,21 @@ export default function GenerateIdeasButton() {
                       marginBottom: '4px',
                     }}
                   >
-                    {new Date(gen.timestamp).toLocaleString()}
+                    <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
+                      {new Date(gen.timestamp).toLocaleString()}
+                    </div>
+                    
+                    <div style={{ fontSize: '11px', color: '#444', marginBottom: '6px', fontWeight: 'bold' }}>
+                      Sticky Notes Used:
+                    </div>
+                    <ul style={{ marginLeft: '16px', marginBottom: '6px' }}>
+                      {(gen.stickiesUsed || []).map((text, idx) => (
+                        <li key={idx} style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>
+                          {text.length > 100 ? text.slice(0, 100) + '...' : text}
+                        </li>
+                      ))}
+                    </ul>
+
                   </div>
                   <ul style={{ marginLeft: '16px' }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
