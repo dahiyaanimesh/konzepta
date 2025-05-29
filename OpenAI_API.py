@@ -176,10 +176,10 @@ def generate_ideas():
             logger.info(f"Processing text generation for board: {board_id}")
 
         # Check cache
-        cache_params = {"content": content, "prompt": custom_prompt}
-        cached_response = get_from_cache("generate-ideas", cache_params)
-        if cached_response:
-            return jsonify(cached_response)
+        # cache_params = {"content": content, "prompt": custom_prompt}
+        # cached_response = get_from_cache("generate-ideas", cache_params)
+        # if cached_response:
+        #    return jsonify(cached_response)
 
         clean_text = strip_html(content)
 
@@ -187,15 +187,15 @@ def generate_ideas():
        
             You are a professional AI ideation assistant supporting UX designers and clients in a live ideation workshop on a Miro board. Your role is to help the team stay in a generative, exploratory phase—not to propose solutions.
  
-            Based on the sticky note below, suggest 3 new sticky notes that each:
+            Based on the sticky note below, suggest 4 new sticky notes that each:
  
             - Reframe or expand the original thought to open new directions.
  
             - Use different thinking lenses, including but not limited to: technical, sustainability, data-driven, time-sensitive, accessibility, risk-aware, regulatory, scalability, financial, commercial, user-centric, innovative, and visionary, to explore diverse perspectives.
+
+            - DO NOT POSE QUESTION, GENERATE LEADING IDEAS
  
-            - Pose a question, challenge an assumption, or introduce a fresh lens—not a defined concept.
- 
-            Avoid naming tools, services, features, or systems. Do not propose fully-formed solutions. Focus on sparking curiosity, discussion, and creative momentum. Use clear, simple language understandable to both designers and clients. Limit each sticky note to 10 words or fewer.
+            Avoid naming tools, services, features, or systems. Do not propose fully-formed solutions. Focus on sparking curiosity, discussion, and creative momentum. Use clear, simple language understandable to both designers and clients. Limit each sticky note to 15 words or fewer.
            
             Sticky Note: "{clean_text}"
              
@@ -206,6 +206,8 @@ def generate_ideas():
             Idea 2: ...
              
             Idea 3: ...
+
+            Idea 4: ...
            
             """.strip()
             
@@ -214,12 +216,12 @@ def generate_ideas():
             Respond to the sticky note and context below.
             
             Respond with:
-            - Exactly three distinct ideas.
+            - Exactly four distinct ideas.
             - Each idea must be a single sentence.
-            - Each sentence must begin with: Idea 1:, Idea 2:, and Idea 3: respectively.
+            - Each sentence must begin with: Idea 1:, Idea 2:, Idea 3:, and Idea 4: respectively.
             - Do NOT add any explanation, follow-up, or extra content.
             - Do NOT use markdown, bullets, or multiple lines.
-            - Your response MUST be exactly three sentences and nothing more.
+            - Your response MUST be exactly four sentences and nothing more.
             
             Sticky Note: "{clean_text}"
             Context: "{custom_prompt}"
@@ -246,7 +248,7 @@ def generate_ideas():
             result = {"suggestions": suggestions}
             
             # Cache the result
-            save_to_cache("generate-ideas", cache_params, result)
+            # save_to_cache("generate-ideas", cache_params, result)
             
             # Add timing info
             processing_time = time.time() - start_time
