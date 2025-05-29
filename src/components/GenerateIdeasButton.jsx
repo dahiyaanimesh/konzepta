@@ -520,7 +520,15 @@ export default function GenerateIdeasButton() {
         <div style={{ marginTop: '30px' }}>
           <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
           {history.map((group, groupIdx) => (
-            <div key={groupIdx} style={{ marginBottom: '20px', padding: '10px', border: '1px solid #eee', borderRadius: '8px' }}>
+            <div
+              key={groupIdx}
+              style={{
+                marginBottom: '20px',
+                padding: '10px',
+                border: '1px solid #eee',
+                borderRadius: '8px',
+              }}
+            >
               <div style={{ marginBottom: '6px' }}>
                 <strong>Prompt:</strong> <em>{group.prompt}</em>
                 <button
@@ -533,7 +541,7 @@ export default function GenerateIdeasButton() {
                     border: 'none',
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   }}
                 >
                   ↩️ Reuse Prompt
@@ -541,12 +549,25 @@ export default function GenerateIdeasButton() {
               </div>
       
               {group.generations.map((gen, genIdx) => (
-                <div key={genIdx} style={{ marginTop: '10px', paddingLeft: '10px', borderLeft: '2px solid #ccc' }}>
-                  <div style={{ fontSize: '11px', color: '#888', marginBottom: '4px' }}>
+                <div
+                  key={genIdx}
+                  style={{
+                    marginTop: '10px',
+                    paddingLeft: '10px',
+                    borderLeft: '2px solid #ccc',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      color: '#888',
+                      marginBottom: '4px',
+                    }}
+                  >
                     {new Date(gen.timestamp).toLocaleString()}
                   </div>
                   <ul style={{ marginLeft: '16px' }}>
-                    {gen.ideas.map((idea, ideaIdx) => (
+                    {(gen.ideas || []).map((idea, ideaIdx) => (
                       <li key={ideaIdx} style={{ marginBottom: '4px' }}>
                         {idea}
                         <button
@@ -559,7 +580,7 @@ export default function GenerateIdeasButton() {
                             border: 'none',
                             padding: '2px 6px',
                             borderRadius: '4px',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
                           }}
                         >
                           + Add to board
@@ -584,7 +605,7 @@ export default function GenerateIdeasButton() {
               border: 'none',
               color: '#59C3FF',
               cursor: 'pointer',
-              textDecoration: 'underline'
+              textDecoration: 'underline',
             }}
           >
             Clear History
