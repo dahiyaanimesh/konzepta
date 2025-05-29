@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getOrCreateAITag } from './miroUtils';
 
 export default function GenerateIdeasButton() {
   const [allStickyNotes, setAllStickyNotes] = useState([]);
@@ -75,13 +76,27 @@ export default function GenerateIdeasButton() {
   };
 
   const addToMiroBoard = async (text) => {
-    await miro.board.createStickyNote({
-      content: text,
-      style: {
-        shape: 'square',
-        fillColor: 'light_yellow'
+    try {
+      // Get or create the "AI" tag
+      const aiTag = await getOrCreateAITag();
+
+      // Create the sticky note with the AI tag
+      const stickyNote = await miro.board.createStickyNote({
+        content: text,
+        style: {
+          shape: 'square',
+          fillColor: 'light_yellow'
+        },
+        tagIds: aiTag ? [aiTag.id] : [], // Add the AI tag if it was created successfully
+      });
+
+      // Sync the sticky note to make the tag visible
+      if (aiTag) {
+        await stickyNote.sync();
       }
-    });
+    } catch (err) {
+      console.error('Error adding sticky to board:', err);
+    }
   };
 
   const toggleAccordion = (index) => {
@@ -209,8 +224,6 @@ export default function GenerateIdeasButton() {
     </div>
   );
 }
-
-
 
 export async function generateImageIdeas() {
   try {

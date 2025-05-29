@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { generateImageIdeas, generateImagesFromSelection, getCurrentBoardId } from '../utils/miroUtils';
+import { generateImageIdeas, generateImagesFromSelection, getCurrentBoardId, getOrCreateAITag } from '../utils/miroUtils';
 import config from '../config';
 
 export default function GenerateIdeasButton() {
@@ -160,12 +160,22 @@ export default function GenerateIdeasButton() {
     const y = viewport.y + viewport.height / 2;
 
     try {
-      await miro.board.createStickyNote({
+      // Get or create the "AI" tag
+      const aiTag = await getOrCreateAITag();
+
+      // Create the sticky note with the AI tag
+      const stickyNote = await miro.board.createStickyNote({
         content: contentToAdd,
         x,
         y,
         style: { shape: 'square', fillColor: getCommonStickyColor() },
+        tagIds: aiTag ? [aiTag.id] : [], // Add the AI tag if it was created successfully
       });
+
+      // Sync the sticky note to make the tag visible
+      if (aiTag) {
+        await stickyNote.sync();
+      }
     } catch (err) {
       console.error('Error adding sticky to board:', err);
     }
