@@ -588,9 +588,9 @@ export default function GenerateIdeasButton() {
                     </ul>
 
                   </div>
-                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px' }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
-                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E' }}>
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
                         {idea}
                         <button
                           onClick={() => addToMiroBoard(idea)}
