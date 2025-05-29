@@ -570,9 +570,6 @@ export default function GenerateIdeasButton() {
                       fontSize: '11px',
                       color: '#888',
                       marginBottom: '4px',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 2fr))',
-                      gap: '5px',
                     }}
                   >
                     <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px'  }}>
@@ -591,7 +588,7 @@ export default function GenerateIdeasButton() {
                     </ul>
 
                   </div>
-                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
+                  <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px',}}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
                       <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E' }}>
                         {idea}
