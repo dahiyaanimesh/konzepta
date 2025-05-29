@@ -118,6 +118,10 @@ export default function GenerateIdeasButton() {
     setTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
   };
 
+  const [history, setHistory] = useState(() => {
+    const stored = localStorage.getItem('promptHistory');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   const handleGenerateIdeas = async () => {
     if (!stickyNoteText.trim()) {
@@ -141,6 +145,12 @@ export default function GenerateIdeasButton() {
       : [data.suggestions?.trim()];
 
     setSuggestions([...ideas]); // force new array reference to trigger re-render
+    if (prompt.trim() !== "") {
+      const newEntry = { prompt, ideas, timestamp: new Date().toISOString() };
+      const updatedHistory = [newEntry, ...history.slice(0, 19)];
+      setHistory(updatedHistory);
+      localStorage.setItem('promptHistory', JSON.stringify(updatedHistory));
+    }
     setHasGenerated(true);
     setLoading(false);
   };
@@ -473,6 +483,41 @@ export default function GenerateIdeasButton() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+      {history.length > 0 && (
+        <div style={{ marginTop: '30px' }}>
+          <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
+          <ul style={{ fontSize: '12px', color: '#555', maxHeight: '200px', overflowY: 'auto' }}>
+            {history.map((entry, idx) => (
+              <li key={idx} style={{ marginBottom: '10px' }}>
+                <strong>{new Date(entry.timestamp).toLocaleString()}:</strong><br/>
+                <em>{entry.prompt || '(No custom prompt)'}</em><br/>
+                <ul style={{ marginLeft: '16px' }}>
+                  {entry.ideas.map((idea, i) => (
+                    <li key={i}>{idea}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => {
+              setHistory([]);
+              localStorage.removeItem('promptHistory');
+            }}
+            style={{
+              marginTop: '10px',
+              fontSize: '11px',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#59C3FF',
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Clear History
+          </button>
         </div>
       )}
     </div>
