@@ -570,6 +570,9 @@ export default function GenerateIdeasButton() {
                       fontSize: '11px',
                       color: '#888',
                       marginBottom: '4px',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 2fr))',
+                      gap: '5px',
                     }}
                   >
                     <div style={{  fontSize: '11px', color: '#7A7A7A', textAlign: 'left', maxWidth: '300px', marginBottom: '6px'  }}>
