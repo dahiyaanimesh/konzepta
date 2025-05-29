@@ -474,7 +474,7 @@ export default function GenerateIdeasButton() {
         </div>
       )}
 
-      {suggestions.length > 0 && (
+      {Array.isArray(suggestions) && suggestions.length > 0 && (
         <div key={suggestions.length + Date.now()} style={{
           marginTop: '20px',
           display: 'grid',
@@ -551,7 +551,7 @@ export default function GenerateIdeasButton() {
                 </button>
               </div>
       
-              {group.generations.map((gen, genIdx) => (
+              {Array.isArray(group.generations) && group.generations.map((gen, genIdx) => (
                 <div
                   key={genIdx}
                   style={{
@@ -570,7 +570,7 @@ export default function GenerateIdeasButton() {
                     {new Date(gen.timestamp).toLocaleString()}
                   </div>
                   <ul style={{ marginLeft: '16px' }}>
-                    {(gen.ideas || []).map((idea, ideaIdx) => (
+                    {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
                       <li key={ideaIdx} style={{ marginBottom: '4px' }}>
                         {idea}
                         <button
