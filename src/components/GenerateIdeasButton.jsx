@@ -590,7 +590,7 @@ export default function GenerateIdeasButton() {
                   </div>
                   <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0 }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
-                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', marginRight: '5px' }}>
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E' }}>
                         {idea}
                         <button
                           onClick={() => addToMiroBoard(idea)}
