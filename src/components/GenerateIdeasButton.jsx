@@ -129,6 +129,7 @@ export default function GenerateIdeasButton() {
     }
     setLoading(true);
     setSuggestions([]);
+  
     const res = await fetch(`${config.apiBaseUrl}/generate-ideas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -138,45 +139,51 @@ export default function GenerateIdeasButton() {
         boardId: await getCurrentBoardId(),
       }),
     });
+  
     const data = await res.json();
-    const matches = data.suggestions?.match(/Idea\s*\d[:\uff1a][^]*?(?=Idea\s*\d[:\uff1a]|$)/g);
+  
+    const suggestionsText = data.suggestions || "";
+  
+    const matches = suggestionsText.match(/Idea\s*\d[:\uff1a][^]*?(?=Idea\s*\d[:\uff1a]|$)/g);
+  
     const ideas = matches
       ? matches.map(i => i.replace(/Idea\s*\d[:\uff1a]/, '').trim())
-      : [data.suggestions?.trim()];
-
-    setSuggestions([...ideas]); // force new array reference to trigger re-render
+      : suggestionsText.trim()
+        ? [suggestionsText.trim()]
+        : [];
+  
+    setSuggestions(ideas); // always an array
+  
     if (prompt.trim() !== "") {
       const timestamp = new Date().toISOString();
       const newGeneration = { ideas, timestamp };
-    
+  
       let updatedHistory;
       const existingGroup = history.find(h => h.prompt === prompt);
-    
+  
       if (existingGroup) {
         // Append to existing prompt group
         const newGroup = {
           ...existingGroup,
-          generations: [newGeneration, ...existingGroup.generations]
+          generations: [newGeneration, ...existingGroup.generations],
         };
         updatedHistory = [
           newGroup,
-          ...history.filter(h => h.prompt !== prompt)
+          ...history.filter(h => h.prompt !== prompt),
         ];
       } else {
         // New prompt group
-        updatedHistory = [
-          { prompt, generations: [newGeneration] },
-          ...history
-        ];
+        updatedHistory = [{ prompt, generations: [newGeneration] }, ...history];
       }
-    
+  
       setHistory(updatedHistory);
       localStorage.setItem('promptHistory', JSON.stringify(updatedHistory));
     }
-
+  
     setHasGenerated(true);
     setLoading(false);
   };
+
 
   const handleGenerateImages = () => {
     if (!stickyNoteText.trim()) {
