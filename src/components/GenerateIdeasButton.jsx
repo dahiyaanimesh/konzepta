@@ -485,22 +485,58 @@ export default function GenerateIdeasButton() {
           ))}
         </div>
       )}
+      
       {history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h4 style={{ fontSize: '14px', marginBottom: '8px' }}>🕘 Prompt History</h4>
           <ul style={{ fontSize: '12px', color: '#555', maxHeight: '200px', overflowY: 'auto' }}>
             {history.map((entry, idx) => (
-              <li key={idx} style={{ marginBottom: '10px' }}>
+              <li key={idx} style={{ marginBottom: '14px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
                 <strong>{new Date(entry.timestamp).toLocaleString()}:</strong><br/>
-                <em>{entry.prompt || '(No custom prompt)'}</em><br/>
-                <ul style={{ marginLeft: '16px' }}>
+                <em>{entry.prompt || '(No custom prompt)'}</em>
+                <ul style={{ marginLeft: '16px', marginTop: '4px' }}>
                   {entry.ideas.map((idea, i) => (
                     <li key={i}>{idea}</li>
                   ))}
                 </ul>
+                
+                <div style={{ marginTop: '6px', display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => {
+                      entry.ideas.forEach(addToMiroBoard);
+                    }}
+                    style={{
+                      fontSize: '11px',
+                      backgroundColor: '#4262FF',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ➕ Add ideas to board
+                  </button>
+      
+                  <button
+                    onClick={() => setPrompt(entry.prompt)}
+                    style={{
+                      fontSize: '11px',
+                      backgroundColor: '#F9E000',
+                      color: '#000',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ↩️ Reuse prompt
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
+      
           <button
             onClick={() => {
               setHistory([]);
@@ -520,6 +556,7 @@ export default function GenerateIdeasButton() {
           </button>
         </div>
       )}
+      
     </div>
   );
 }
