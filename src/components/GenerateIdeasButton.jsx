@@ -649,11 +649,11 @@ export default function GenerateIdeasButton() {
             </div>
           ))}
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
+          <div style={{ fontSize: '12px', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ padding: '4px 10px', cursor: currentPage === 1 ? 'default' : 'pointer' }}
+              style={{ padding: '4px 6px', cursor: currentPage === 1 ? 'default' : 'pointer' }}
             >
               ◀ Prev
             </button>
@@ -663,7 +663,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ padding: '4px 10px', cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+              style={{ padding: '4px 6px', cursor: currentPage === totalPages ? 'default' : 'pointer' }}
             >
               Next ▶
             </button>
@@ -675,7 +675,7 @@ export default function GenerateIdeasButton() {
               localStorage.removeItem('promptHistory');
             }}
             style={{
-              marginTop: '2px',
+              marginTop: '10px',
               border: 'none',
               background: 'transparent',
               color: '#59C3FF',
