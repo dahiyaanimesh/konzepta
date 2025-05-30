@@ -23,6 +23,14 @@ export default function GenerateIdeasButton() {
     }
   }, [warningMessage]);
 
+  const [history, setHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('promptHistory');
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
+
   useEffect(() => {
     const clearHistoryIfNewBoard = async () => {
       try {
@@ -39,7 +47,7 @@ export default function GenerateIdeasButton() {
         console.error('Failed to get board ID or clear history:', err);
       }
     };
-  
+    
     clearHistoryIfNewBoard();
   }, []);
 
@@ -141,14 +149,6 @@ export default function GenerateIdeasButton() {
   const updateTooltipPosition = (e) => {
     setTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
   };
-
-  const [history, setHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('promptHistory');
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 1;
