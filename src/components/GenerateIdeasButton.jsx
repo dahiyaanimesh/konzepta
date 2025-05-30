@@ -654,7 +654,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ alignSelf: 'flex-left', padding: '6px 10px 6px 10px', cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
             >
               ◀
             </button>
@@ -664,7 +664,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ alignSelf: 'flex-right', padding: '6px 10px 6px 10px', cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
             >
               ▶
             </button>
@@ -678,15 +678,18 @@ export default function GenerateIdeasButton() {
             style={{
               marginTop: '10px',
               border: 'none',
-              background: 'transparent',
               color: '#59C3FF',
               cursor: 'pointer',
               fontSize: '12px',
               fontWeight: '600',
               userSelect: 'none',
-              padding: '0',
               alignSelf: 'flex-start',
-              marginBottom: '30px'
+              marginBottom: '30px',
+              padding: '6px 10px 6px 10px',
+              flex: 1, 
+              backgroundColor: '#F5F6F8', 
+              borderRadius: '6px', 
+              boxShadow: '1px 1px 2px rgba(0,0,0,0.2)'
             }}
           >
             Clear History
