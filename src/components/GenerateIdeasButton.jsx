@@ -23,6 +23,30 @@ export default function GenerateIdeasButton() {
     }
   }, [warningMessage]);
 
+  useEffect(() => {
+    const clearHistoryIfNewBoard = async () => {
+      try {
+        const currentBoardId = await getCurrentBoardId(); // from your utils
+        const lastBoardId = localStorage.getItem('lastBoardId');
+  
+        if (lastBoardId && lastBoardId !== currentBoardId) {
+          localStorage.removeItem('promptHistory');
+          setHistory([]);
+        }
+  
+        localStorage.setItem('lastBoardId', currentBoardId);
+      } catch (err) {
+        console.error('Failed to get board ID or clear history:', err);
+      }
+    };
+  
+    clearHistoryIfNewBoard();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [history]);
+
   const extractContent = (note) => {
     const raw = note.fields?.plainText || note.content || note.data?.content || note.title || '';
     const temp = document.createElement('div');
@@ -125,6 +149,13 @@ export default function GenerateIdeasButton() {
     }
     return [];
   });
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 1;
+
+  const totalPages = Math.ceil(history.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const currentHistoryPage = history.slice(startIdx, startIdx + itemsPerPage);
 
   const handleGenerateIdeas = async () => {
     if (!stickyNoteText.trim()) {
@@ -525,9 +556,9 @@ export default function GenerateIdeasButton() {
       {Array.isArray(history) && history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
-          {history.map((group, groupIdx) => (
+          {currentHistoryPage.map((group, groupIdx) => (
             <div
-              key={groupIdx}
+              key={startIdx + groupIdx}
               style={{
                 marginBottom: '10px',
                 padding: '10px',
@@ -590,7 +621,7 @@ export default function GenerateIdeasButton() {
                   </div>
                   <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px' }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
-                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
                         {idea}
                         <button
                           onClick={() => addToMiroBoard(idea)}
@@ -617,6 +648,26 @@ export default function GenerateIdeasButton() {
               ))}
             </div>
           ))}
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              style={{ padding: '4px 10px', cursor: currentPage === 1 ? 'default' : 'pointer' }}
+            >
+              ◀ Prev
+            </button>
+            <span style={{ fontSize: '12px', color: '#666' }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              style={{ padding: '4px 10px', cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+            >
+              Next ▶
+            </button>
+          </div>
       
           <button
             onClick={() => {
