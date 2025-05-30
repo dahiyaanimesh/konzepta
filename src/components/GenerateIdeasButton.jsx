@@ -554,7 +554,7 @@ export default function GenerateIdeasButton() {
       )}
       
       {Array.isArray(history) && history.length > 0 && (
-        <div style={{ marginTop: '30px', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)', backgroundColor: '#FAFAFA' }}>
+        <div style={{ marginTop: '30px' }}>
           <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
           {currentHistoryPage.map((group, groupIdx) => (
             <div
@@ -562,8 +562,9 @@ export default function GenerateIdeasButton() {
               style={{
                 marginBottom: '10px',
                 padding: '10px',
-                border: '1px solid #eee',
                 borderRadius: '8px',
+                boxShadow: '1px 1px 2px rgba(0,0,0,0.1)', 
+                backgroundColor: '#FAFAFA'
               }}
             >
               <div style={{ marginBottom: '6px' }}>
@@ -649,7 +650,7 @@ export default function GenerateIdeasButton() {
             </div>
           ))}
 
-          <div style={{ fontSize: '12px' }}>
+          <div style={{ fontSize: '12px', justifyContent: 'center' }}>
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
@@ -657,7 +658,7 @@ export default function GenerateIdeasButton() {
             >
               ◀
             </button>
-            <span style={{ fontSize: '11px', color: '#7A7A7A' }}>
+            <span style={{ fontSize: '11px', color: '#7A7A7A', marginLeft: '10px', marginRight: '10px' }}>
               Page {currentPage} of {totalPages}
             </span>
             <button
