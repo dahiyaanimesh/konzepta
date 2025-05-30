@@ -654,7 +654,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
+              style={{ cursor: currentPage === 1 ? 'default' : 'pointer', color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
             >
               ◀
             </button>
@@ -664,7 +664,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
+              style={{ cursor: currentPage === totalPages ? 'default' : 'pointer', color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
             >
               ▶
             </button>
@@ -685,8 +685,7 @@ export default function GenerateIdeasButton() {
               userSelect: 'none',
               alignSelf: 'flex-start',
               marginBottom: '30px',
-              padding: '6px 10px 6px 10px',
-              flex: 1, 
+              padding: 0
             }}
           >
             Clear History
