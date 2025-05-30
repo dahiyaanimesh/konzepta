@@ -650,11 +650,11 @@ export default function GenerateIdeasButton() {
             </div>
           ))}
 
-          <div style={{ fontSize: '12px', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', fontSize: '12px', justifyContent: 'center', alignItems: 'center' }}>
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
             >
               ◀
             </button>
@@ -664,7 +664,7 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}
             >
               ▶
             </button>
