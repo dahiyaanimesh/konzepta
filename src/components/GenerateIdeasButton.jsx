@@ -650,7 +650,7 @@ export default function GenerateIdeasButton() {
             </div>
           ))}
 
-          <div style={{ fontSize: '12px', justifyContent: 'center' }}>
+          <div style={{ fontSize: '12px', justifyContent: 'center', alignItems: 'center' }}>
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
