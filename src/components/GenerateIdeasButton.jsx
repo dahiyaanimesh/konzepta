@@ -554,7 +554,7 @@ export default function GenerateIdeasButton() {
       )}
       
       {Array.isArray(history) && history.length > 0 && (
-        <div style={{ marginTop: '30px' }}>
+        <div style={{ marginTop: '30px', boxShadow: '1px 1px 2px rgba(0,0,0,0.1)', backgroundColor: '#FAFAFA' }}>
           <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
           {currentHistoryPage.map((group, groupIdx) => (
             <div
@@ -653,9 +653,9 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
-              style={{ padding: '6px 10px', cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ alignSelf: 'flex-left', padding: '6px 10px 6px 10px', cursor: currentPage === 1 ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
             >
-              ◀ Prev
+              ◀
             </button>
             <span style={{ fontSize: '11px', color: '#7A7A7A' }}>
               Page {currentPage} of {totalPages}
@@ -663,9 +663,9 @@ export default function GenerateIdeasButton() {
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => prev + 1)}
-              style={{ padding: '6px 10px', cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
+              style={{ alignSelf: 'flex-right', padding: '6px 10px 6px 10px', cursor: currentPage === totalPages ? 'default' : 'pointer', flex: 1, color: '#7A7A7A', backgroundColor: '#F5F6F8', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer', boxShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}
             >
-              Next ▶
+              ▶
             </button>
           </div>
       
