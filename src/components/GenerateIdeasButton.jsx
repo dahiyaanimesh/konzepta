@@ -655,8 +655,8 @@ export default function GenerateIdeasButton() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: '20px',
-            marginBottom: '30px'
+            marginTop: '10px',
+            paddingBottom: '30px'
           }}>
             {/* Left side: Page navigation */}
             <div style={{ display: 'inline-block', fontSize: '12px' }}>
