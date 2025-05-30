@@ -650,7 +650,7 @@ export default function GenerateIdeasButton() {
             </div>
           ))}
 
-          <div style={{ display: 'flex', fontSize: '12px', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', fontSize: '12px', alignItems: 'center' }}>
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
@@ -687,9 +687,6 @@ export default function GenerateIdeasButton() {
               marginBottom: '30px',
               padding: '6px 10px 6px 10px',
               flex: 1, 
-              backgroundColor: '#F5F6F8', 
-              borderRadius: '6px', 
-              boxShadow: '1px 1px 2px rgba(0,0,0,0.2)'
             }}
           >
             Clear History
