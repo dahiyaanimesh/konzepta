@@ -35,7 +35,7 @@ async function calculatePlacement(items) {
         const frameBottom = parent.y + parent.height / 2;
         y = Math.max(y, frameTop + imageHalfWidth);
         y = Math.min(y, frameBottom - imageHalfWidth);
-      } // else: parent is table or something else, do not clamp
+      }
     }
 
     return {
