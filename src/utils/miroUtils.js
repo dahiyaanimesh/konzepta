@@ -12,25 +12,37 @@ import config from '../config';
 function calculatePlacement(items) {
   if (!items || items.length === 0) return null;
 
-  // Average position
-  const avgX = items.reduce((sum, i) => sum + (i.x ?? 0), 0) / items.length;
-  const avgY = items.reduce((sum, i) => sum + (i.y ?? 0), 0) / items.length;
-
-  // Push the new image 400 px to the right of the cluster
-  const positionData = {
-    x: avgX + 400,
-    y: avgY,
-    origin: 'center'
-  };
-
-  // Copy width from the first item (keep it square)
-  let width = 600;
-  if (items[0]?.geometry?.width) {
-    width = items[0].geometry.width;
+  if (items.length === 1) {
+    // Single selection: place next to the item
+    const baseItem = items[0];
+    return {
+      positionData: {
+        x: baseItem.x + 400,
+        y: baseItem.y,
+        origin: 'center'
+      },
+      geometryData: {
+        width: baseItem?.geometry?.width || 600,
+        height: baseItem?.geometry?.width || 600
+      }
+    };
+  } else {
+    // Multiple selection: use average
+    const avgX = items.reduce((sum, i) => sum + (i.x ?? 0), 0) / items.length;
+    const avgY = items.reduce((sum, i) => sum + (i.y ?? 0), 0) / items.length;
+    let width = 600;
+    if (items[0]?.geometry?.width) {
+      width = items[0].geometry.width;
+    }
+    return {
+      positionData: {
+        x: avgX + 400,
+        y: avgY,
+        origin: 'center'
+      },
+      geometryData: { width, height: width }
+    };
   }
-  const geometryData = { width, height: width };
-
-  return { positionData, geometryData };
 }
 
 /**
