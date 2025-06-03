@@ -9,28 +9,56 @@ import config from '../config';
  *   – position 400 px to the right of the items' centre
  *   – geometry copied from the first item (square)
  */
-function calculatePlacement(items) {
+async function calculatePlacement(items) {
   if (!items || items.length === 0) return null;
 
-  // Average position
-  const avgX = items.reduce((sum, i) => sum + (i.x ?? 0), 0) / items.length;
-  const avgY = items.reduce((sum, i) => sum + (i.y ?? 0), 0) / items.length;
+  if (items.length === 1) {
+    const baseItem = items[0];
+    let x = baseItem.x + 400;
+    let y = baseItem.y;
+    let width = baseItem?.geometry?.width || 600;
+    let height = width;
 
-  // Push the new image 400 px to the right of the cluster
-  const positionData = {
-    x: avgX + 400,
-    y: avgY,
-    origin: 'center'
-  };
+    // If the sticky is inside a frame, keep the image inside the same frame
+    if (baseItem.parentId) {
+      const parent = await miro.board.getById(baseItem.parentId);
+      if (parent && parent.type === 'frame') {
+        const frameRight = parent.x + parent.width / 2;
+        const imageHalfWidth = width / 2;
+        // The image's center x must be <= frameRight - imageHalfWidth
+        x = Math.min(x, frameRight - imageHalfWidth);
+        // The image's center x must be >= frameLeft + imageHalfWidth
+        const frameLeft = parent.x - parent.width / 2;
+        x = Math.max(x, frameLeft + imageHalfWidth);
+        // Clamp y to stay within the frame vertically
+        const frameTop = parent.y - parent.height / 2;
+        const frameBottom = parent.y + parent.height / 2;
+        y = Math.max(y, frameTop + imageHalfWidth);
+        y = Math.min(y, frameBottom - imageHalfWidth);
+      }
+    }
 
-  // Copy width from the first item (keep it square)
-  let width = 600;
-  if (items[0]?.geometry?.width) {
-    width = items[0].geometry.width;
+    return {
+      positionData: { x, y, origin: 'center' },
+      geometryData: { width, height }
+    };
+  } else {
+    // Multiple selection: use average
+    const avgX = items.reduce((sum, i) => sum + (i.x ?? 0), 0) / items.length;
+    const avgY = items.reduce((sum, i) => sum + (i.y ?? 0), 0) / items.length;
+    let width = 600;
+    if (items[0]?.geometry?.width) {
+      width = items[0].geometry.width;
+    }
+    return {
+      positionData: {
+        x: avgX + 400,
+        y: avgY,
+        origin: 'center'
+      },
+      geometryData: { width, height: width }
+    };
   }
-  const geometryData = { width, height: width };
-
-  return { positionData, geometryData };
 }
 
 /**
@@ -99,7 +127,7 @@ export async function generateImageIdeas(setImageLoading, stickyNoteText, prompt
       const valid = selection.filter(i =>
         ['sticky_note', 'shape', 'text'].includes(i.type)
       );
-      placement = calculatePlacement(valid);
+      placement = await calculatePlacement(valid);
     } catch (_) {}
 
     if (!placement) placement = await defaultPlacement();
@@ -157,14 +185,14 @@ export async function generateImagesFromSelection(setImageLoading, prompt) {
     }
 
     const itemIds = validItems.map(i => i.id);
-    const { positionData, geometryData } = calculatePlacement(validItems);
+    const placement = await calculatePlacement(validItems);
     const boardId = await getCurrentBoardId();
 
     const payload = {
       selectedShapeIds: itemIds,
       boardId,
-      positionData,
-      geometryData,
+      positionData: placement.positionData,
+      geometryData: placement.geometryData,
       prompt: prompt
     };
 
@@ -181,7 +209,7 @@ export async function generateImagesFromSelection(setImageLoading, prompt) {
     // 🔁 UPDATED: use frontend positioning for placing images
     if (result.status === 'success' && Array.isArray(result.image_urls)) {
       for (const imageUrl of result.image_urls) {
-        await createImageOnBoard(imageUrl, positionData, geometryData);
+        await createImageOnBoard(imageUrl, placement.positionData, placement.geometryData);
       }
     } else {
       console.log(`${result.images_added} image(s) added to Miro board`);

@@ -23,6 +23,38 @@ export default function GenerateIdeasButton() {
     }
   }, [warningMessage]);
 
+  const [history, setHistory] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('promptHistory');
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    const clearHistoryIfNewBoard = async () => {
+      try {
+        const currentBoardId = await getCurrentBoardId(); // from your utils
+        const lastBoardId = localStorage.getItem('lastBoardId');
+  
+        if (lastBoardId && lastBoardId !== currentBoardId) {
+          localStorage.removeItem('promptHistory');
+          setHistory([]);
+        }
+  
+        localStorage.setItem('lastBoardId', currentBoardId);
+      } catch (err) {
+        console.error('Failed to get board ID or clear history:', err);
+      }
+    };
+    
+    clearHistoryIfNewBoard();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [history]);
+
   const extractContent = (note) => {
     const raw = note.fields?.plainText || note.content || note.data?.content || note.title || '';
     const temp = document.createElement('div');
@@ -117,14 +149,13 @@ export default function GenerateIdeasButton() {
   const updateTooltipPosition = (e) => {
     setTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
   };
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 1;
 
-  const [history, setHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('promptHistory');
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
+  const totalPages = Math.ceil(history.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const currentHistoryPage = history.slice(startIdx, startIdx + itemsPerPage);
 
   const handleGenerateIdeas = async () => {
     if (!stickyNoteText.trim()) {
@@ -525,14 +556,15 @@ export default function GenerateIdeasButton() {
       {Array.isArray(history) && history.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h4 style={{  fontSize: '14px', marginBottom: '6px', textAlign: 'left', textShadow: '1px 1px 2px rgba(0,0,0,0.05)', color: '#2a2a2a'  }}>🕘 Prompt History</h4>
-          {history.map((group, groupIdx) => (
+          {currentHistoryPage.map((group, groupIdx) => (
             <div
-              key={groupIdx}
+              key={startIdx + groupIdx}
               style={{
                 marginBottom: '10px',
                 padding: '10px',
-                border: '1px solid #eee',
                 borderRadius: '8px',
+                boxShadow: '1px 1px 2px rgba(0,0,0,0.1)', 
+                backgroundColor: '#FAFAFA'
               }}
             >
               <div style={{ marginBottom: '6px' }}>
@@ -590,7 +622,7 @@ export default function GenerateIdeasButton() {
                   </div>
                   <ul style={{ listStyleType: 'none', paddingLeft: 0, marginLeft: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px' }}>
                     {Array.isArray(gen.ideas) && gen.ideas.map((idea, ideaIdx) => (
-                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', display: 'flex', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <li key={ideaIdx} style={{ fontSize: '11px', marginBottom: '4px', backgroundColor: '#FFF68D', border: '1px solid #FFF68D', borderRadius: '6px', padding: '4px 10px 4px 10px', alignItems: 'center', maxWidth: '300px', color: '#2E2E2E', listStyleType: 'none', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 2fr))', gap: '5px', flexDirection: 'column', justifyContent: 'space-between' }}>
                         {idea}
                         <button
                           onClick={() => addToMiroBoard(idea)}
@@ -617,31 +649,74 @@ export default function GenerateIdeasButton() {
               ))}
             </div>
           ))}
+
+          {/* Controls row: Left = pagination, Right = Clear History */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '10px',
+            paddingBottom: '30px'
+          }}>
+            {/* Left side: Page navigation */}
+            <div style={{ display: 'inline-block', fontSize: '12px' }}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                style={{
+                  cursor: currentPage === 1 ? 'default' : 'pointer',
+                  color: '#7A7A7A',
+                  backgroundColor: '#F5F6F8',
+                  border: 'none',
+                  padding: '6px',
+                  borderRadius: '6px',
+                  boxShadow: '1px 1px 2px rgba(0,0,0,0.1)'
+                }}
+              >
+                ◀
+              </button>
+              <span style={{ fontSize: '11px', color: '#7A7A7A', margin: '0 10px' }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                style={{
+                  cursor: currentPage === totalPages ? 'default' : 'pointer',
+                  color: '#7A7A7A',
+                  backgroundColor: '#F5F6F8',
+                  border: 'none',
+                  padding: '6px',
+                  borderRadius: '6px',
+                  boxShadow: '1px 1px 2px rgba(0,0,0,0.1)'
+                }}
+              >
+                ▶
+              </button>
+            </div>
       
-          <button
-            onClick={() => {
-              setHistory([]);
-              localStorage.removeItem('promptHistory');
-            }}
-            style={{
-              marginTop: '2px',
-              border: 'none',
-              background: 'transparent',
-              color: '#59C3FF',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '600',
-              userSelect: 'none',
-              padding: '0',
-              alignSelf: 'flex-start',
-              marginBottom: '30px'
-            }}
-          >
-            Clear History
-          </button>
+            {/* Right side: Clear History */}
+            <button
+              onClick={() => {
+                setHistory([]);
+                localStorage.removeItem('promptHistory');
+              }}
+              style={{
+                border: 'none',
+                color: '#59C3FF',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600',
+                userSelect: 'none',
+                backgroundColor: 'transparent'
+              }}
+            >
+              Clear History
+            </button>
+          </div>
         </div>
       )}
-      
+            
     </div>
   );
 }
