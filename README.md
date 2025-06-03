@@ -1,16 +1,17 @@
-# Miro AI Ideation Assistant
+# Konzepta - AI Ideation Assistant
 
 A Miro app integration that helps UX designers and teams generate ideas using AI. The app leverages OpenAI's APIs to generate text suggestions and visual sketches based on sticky notes content.
 
-![AI Ideation Assistant Screenshot](https://github.com/dahiyaanimesh/konzepta/blob/main/src/konzepta.png) <!-- Replace with actual screenshot URL when available -->
+![Konzepta Screenshot](src/konzepta.png)
 
 ## Features
 
 - 💡 **Text Idea Generation**: Generate creative ideas and suggestions based on selected sticky notes
 - 🎨 **Image Generation**: Create visual sketches and concepts based on text ideas
 - 📋 **Board Integration**: Seamlessly adds new ideas to your Miro board
-- 🔄 **Semantic Search**: Select specific sticky notes to analyze and expand upon
-- 🔍 **Selection Support**: Load all or just selected sticky notes for focused ideation
+- 🔄 **Smart Selection**: Load all recent sticky notes or select specific ones for focused ideation
+- 📝 **Custom Prompts**: Add custom context and prompts for more targeted idea generation
+- 📊 **History Tracking**: Keep track of previous generations and prompts (stored locally)
 
 ## Use Cases
 
@@ -34,7 +35,7 @@ A Miro app integration that helps UX designers and teams generate ideas using AI
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd miro-ai-ideation-assistant
+   cd konzepta
    ```
 
 2. **Install JavaScript dependencies**:
@@ -48,13 +49,8 @@ A Miro app integration that helps UX designers and teams generate ideas using AI
    ```
 
 4. **Create environment configuration**:
-   - Copy `.env.example` to `.env`
+   - Copy `env.example` to `.env`
    - Add your OpenAI API key and Miro API token
-
-   ```
-   OPENAI_API_KEY=your_openai_api_key
-   MIRO_TOKEN=your_miro_developer_token
-   ```
 
 5. **Start backend server**:
    ```bash
@@ -63,7 +59,7 @@ A Miro app integration that helps UX designers and teams generate ideas using AI
 
 6. **Start frontend development server**:
    ```bash
-   npm run dev
+   npm start
    ```
 
 7. **Configure Miro App**:
@@ -89,19 +85,25 @@ The `OpenAI_API.py` file provides several endpoints:
 
 | Endpoint | Description |
 |----------|-------------|
+| `/` | Root endpoint with API status and available endpoints |
+| `/health` | Health check endpoint |
 | `/generate-ideas` | Generate text ideas based on sticky note content |
-| `/generate-image-ideas` | Generate image ideas from selected shapes |
-| `/generate-text2image-sketches` | Generate image sketches from text content |
+| `/generate-image-ideas` | Generate image ideas from selected shapes with URLs |
+| `/generate-text2image-sketches` | Generate image sketches from text content (base64) |
 
 ## Usage Instructions
 
 1. Install the app on your Miro board
 2. Open the app from the Miro toolbar
-3. Select sticky notes on your board
-4. Click "Load Selected Sticky" or "Load All Stickies"
-5. Click "Generate Text" to create new idea suggestions
-6. Click "Generate Images" to create visual concepts
-7. Click "Add to Miro Board" to add suggestions to your board
+3. **Load Content**:
+   - Click "Load Recent Stickies" to get the 10 most recent sticky notes
+   - Click "Load Selected Sticky" to use currently selected sticky notes
+   - Click "Add Selected" to add more sticky notes to your current selection
+4. **Generate Ideas**:
+   - Optionally add a custom prompt for context
+   - Click "Generate Text" to create new idea suggestions
+   - Click "Generate Images" to create visual concepts
+5. **Add to Board**: Click "Add to Miro Board" to add suggestions to your board
 
 ## Technology Stack
 
@@ -116,26 +118,36 @@ The `OpenAI_API.py` file provides several endpoints:
 
 ```
 ├── src/                 # Frontend source code
+│   ├── app/             # Next.js app directory
 │   ├── components/      # React components
-│   └── utils/           # Utility functions
+│   ├── utils/           # Utility functions
+│   ├── assets/          # Static assets and styles
+│   └── config.js        # Configuration file
 ├── OpenAI_API.py        # Backend API server
 ├── manifest.json        # Miro app manifest
-└── .env.example         # Environment variables template
+├── requirements.txt     # Python dependencies
+└── env.example          # Environment variables template
 ```
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
+- `npm start` - Start development server
 - `npm run build` - Build for production
-- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-## Deployment
+## Key Components
 
-The app can be deployed to Vercel:
+### GenerateIdeasButton
+Main component that handles:
+- Loading sticky notes from Miro board
+- Managing selected sticky notes
+- Generating text ideas with OpenAI
+- Generating images from content
+- Adding generated content back to Miro board
+- Managing prompt history
 
-```bash
-vercel
-```
+### MiroAuth
+Handles Miro authentication silently in the background.
 
 ## Contributing
 
